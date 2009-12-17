@@ -1,10 +1,8 @@
-sfPropel15Plugin
-================
+# sfPropel15Plugin #
 
 Replaces symfony's core Propel plugin by the latest version of Propel, in branch 1.5.
 
-Installation
-============
+## Installation ##
 
 Install the plugin via the subversion repository:
 
@@ -27,10 +25,10 @@ Disable the core Propel plugin and enable the `sfPropel15Plugin` instead:
       {
         $this->enablePlugins('sfPropel15Plugin');
       }
-}
+    }
 
-What's New
-==========
+
+## What's New ##
 
 Propel 1.5 is a backwards compatible evolution of Propel 1.4 (the version bundled with symfony 1.3 and 1.4), which adds some very interesting features. Among these features, you will find the new Propel Query API, which is essentially a Criteria on steroids. Check out the [WHATS_NEW](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.5/WhatsNew) page in the Propel trac to see the full list of changes.
 
