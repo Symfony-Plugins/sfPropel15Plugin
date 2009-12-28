@@ -73,20 +73,6 @@ class SfPropelBehaviorSymfony extends SfPropelBehaviorBase
     }
   }
 
-  public function objectAttributes()
-  {
-    if ($this->isDisabled())
-    {
-      return;
-    }
-
-    return <<<EOF
-
-const PEER = '{$this->getTable()->getPhpName()}Peer';
-
-EOF;
-  }
-
   public function staticAttributes()
   {
     if ($this->isDisabled())
