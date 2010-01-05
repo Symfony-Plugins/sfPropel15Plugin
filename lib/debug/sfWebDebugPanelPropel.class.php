@@ -115,7 +115,12 @@ class sfWebDebugPanelPropel extends sfWebDebugPanel
       }
       // all stuff that has not been eaten by the loop should be the query string
       $query = join($outerGlue, $parts);
-
+      if ($query == "SET NAMES 'utf8'")
+      {
+        // This is the initialization query that occurs on every request. 
+        // It is not significant, so prune it.
+        continue;
+      }
       $query = $this->formatSql(htmlspecialchars($query, ENT_QUOTES, sfConfig::get('sf_charset')));
       $backtrace = isset($log['debug_backtrace']) && count($log['debug_backtrace']) ? '&nbsp;'.$this->getToggleableDebugStack($log['debug_backtrace']) : '';
 
