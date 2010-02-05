@@ -88,7 +88,7 @@ foreach (sfMixer::getCallables('Base{$this->getTable()->getPhpName()}:save:post'
 EOF;
   }
 
-  public function objectMethods()
+  public function objectCall()
   {
     if ($this->isDisabled())
     {
@@ -96,20 +96,10 @@ EOF;
     }
 
     return <<<EOF
-
-/**
- * Calls methods defined via {@link sfMixer}.
- */
-public function __call(\$method, \$arguments)
+if (\$callable = sfMixer::getCallable('Base{$this->getTable()->getPhpName()}:' . \$name))
 {
-  if (!\$callable = sfMixer::getCallable('Base{$this->getTable()->getPhpName()}:'.\$method))
-  {
-    throw new sfException(sprintf('Call to undefined method Base{$this->getTable()->getPhpName()}::%s', \$method));
-  }
-
-  array_unshift(\$arguments, \$this);
-
-  return call_user_func_array(\$callable, \$arguments);
+  array_unshift(\$params, \$this);
+  return call_user_func_array(\$callable, \$params);
 }
 
 EOF;
