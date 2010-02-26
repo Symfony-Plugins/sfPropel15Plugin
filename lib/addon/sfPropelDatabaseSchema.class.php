@@ -686,7 +686,7 @@ class sfPropelDatabaseSchema
         }
       }
 
-      if (!$has_primary_key)
+      if (!$has_primary_key && !isset($this->database[$table]['_propel_behaviors']['concrete_inheritance']))
       {
         // convention for tables without primary key
         $this->database[$table]['id'] = array(
