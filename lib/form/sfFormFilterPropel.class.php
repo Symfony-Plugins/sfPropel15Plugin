@@ -117,8 +117,8 @@ abstract class sfFormFilterPropel extends sfFormFilter
    */
   protected function doBuildCriteria(array $values)
   {
-    $criteria = new Criteria();
-    $peer = constant($this->getModelName().'::PEER');
+    $criteria = PropelQuery::from($this->getModelName());
+    $peer = $criteria->getModelPeerName();
 
     $fields = $this->getFields();
 

@@ -109,12 +109,9 @@ class sfPropelGenerator extends sfModelGenerator
   protected function loadPrimaryKeys()
   {
     $this->primaryKey = array();
-    foreach ($this->tableMap->getColumns() as $column)
+    foreach ($this->tableMap->getPrimaryKeys() as $column)
     {
-      if ($column->isPrimaryKey())
-      {
-        $this->primaryKey[] = $column->getPhpName();
-      }
+      $this->primaryKey[] = $column->getPhpName();
     }
 
     if (!count($this->primaryKey))
