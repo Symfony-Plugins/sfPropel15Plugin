@@ -138,6 +138,29 @@ class sfPropelGenerator extends sfModelGenerator
   }
 
   /**
+   * Returns HTML code for a field.
+   *
+   * @param sfModelGeneratorConfigurationField $field The field
+   *
+   * @return string HTML code
+   */
+  public function renderField($field)
+  {
+    if ($field->isLink() && ($module = $field->getConfig('link_module', false, false)))
+    {
+      $field->setLink(false);
+      $html = parent::renderField($field);
+      $field->setLink(true);
+      $html = sprintf("link_to(%s, '%s', %s)", $html, $module . '_edit', $html);
+      return $html;
+    }
+    else
+    {
+      return parent::renderField($field);
+    }
+  }
+  
+  /**
    * Returns the getter either non-developped: 'getFoo' or developped: '$class->getFoo()'.
    *
    * @param string  $column     The column name

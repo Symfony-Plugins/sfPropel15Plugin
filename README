@@ -193,3 +193,29 @@ All you have to do to filter a list view is to prepend a query string to the URL
     <?php echo link_to($author->getName(), 'book', array(), array('query_string' => 'filters[author_id]=' . $author->getId())) ?>
 
 This is very useful for partial lists, to link admin modules together.
+
+### Cross-Linking Admin Modules ###
+
+In lists, related object columns often have to link to another admin generator module. For instance, in a list of `Books`, a column showing the `Author` name usually needs to link to the `edit` view in the `author` module for the current book author. You can implement this feature using a partial column:
+
+    [yaml]
+    # in generator.yml
+    list:
+      display: [title, _author]
+
+The partial column code is a one-liner, but it's quite tedious to repeat it many times:
+
+    [php]
+    // in modules/book/templates/_author.php
+    <?php echo link_to($book->getAuthor(), 'author_edit', $book->getAuthor) ?>
+
+The `admin15` theme provides a shortcut for this situation. Just define the `link_module` setting in the `Author` field configuration to point the `author` module, and you're good to go:
+
+    [yaml]
+    # in generator.yml
+    list:
+      display: [title, Author]
+      fields:
+        Author: { link_module: author }
+        
+You no longer need a partial for such simple cases. This should unclutter the `templates/` directory of your admin generator modules.
