@@ -69,30 +69,82 @@ To enable this theme, edit your `generator.yml` and change the `theme` property 
 
 You can now use the additional features listed below.
 
-*Tip*: Settings of the admin generator referencing the Peer classes are ignored in this theme. This includes `peer_method`, and `peer_count_method`. The new theme provides alternatives for these settings (see below).
+### Hydrating Related Objects ###
 
-### Additional Query Methods ###
-
-You can executed additional query methods by setting the `query_methods` parameter. For instance, in a list of `Books`, to hydrate the `Author` object together with each `Book`, setup your `list` view as follows:
+The `admin15` theme doesn't use the Peer classes anymore, therefore settings referencing the Peer classes are ignored in this theme. This includes `peer_method`, and `peer_count_method`. The new theme provides a simple alternative for these settings, called `with`. Add each of the objects to hydrate together with the main object in the `with` setting list:
 
     [yaml]
     list:
       display: [title, Author]
-      query_methods: [joinWithAuthor]
+      with: [Author]
 
-The admin generator will then execute the following query to display the list:
+The admin generator will then execute the following query to display the list, effectively executing a single query instead of 1+n queries:
 
     [php]
     $books = BookQuery::create()
       ->joinWithAuthor()
       ->paginate();
 
-Of course, you can add as many `query_methods` as you want, to hydrate multiple objects, or hide some results by default:
+Of course, you can add as many `with` names as you want, to hydrate multiple objects:
 
     [yaml]
     list:
       display: [title, Author, Publisher]
-      query_methods: [joinWithAuthor, joinWithPublisher, filterByPublished]
+      with: [Author, Publisher]
+
+*Tip*: Before adding relations to the `with` setting, check that you don't already have a filter on the foreign key column that already makes the query to list all the related objects. If it's the case, then Propel's Instance Pooling will make the `with` superfluous, as each call to a related object will not trigger an additional query anyway.
+
+### Additional Query Methods ###
+
+You can execute additional query methods in the list by setting the `query_methods` parameter. For instance, in a list of `Books`, to limit the list of published books, setup your `list` view as follows:
+
+    [yaml]
+    list:
+      display: [title]
+      query_methods: [filterByAlreadyPublished]
+
+The admin generator will then execute the following query to display the list:
+
+    [php]
+    $books = BookQuery::create()
+      ->filterByAlreadyPublished()
+      ->paginate();
+
+You must implement each `query_method` in the main object's query class. In this exemple, here is how you can implement `Bookquery::filterByAlreadyPublished()`:
+
+    [php]
+    class BookQuery extends BaseBookQuery
+    {
+      public function filterByAlreadyPublished()
+      {
+        return $this->filterByPublishedAt(array('min' => time()));
+      }
+    }
+    
+You can use this feature to add calculated columns to the list without additional queries:
+
+    [yaml]
+    list:
+      display: [title]
+      query_methods: [withNbReviews]
+
+For this to work, add the following method to the query class:
+
+    [php]
+    class BookQuery extends BaseBookQuery
+    {
+      public function withNbReviews()
+      {
+        return $this
+          ->leftJoin('Book.Review')
+          ->withColumn('COUNT(Review.Id)', 'NbReviews');
+      }
+    }
+
+Now you can add a partial column and use the virtual `NbReviews` column in the list:
+
+    [php]
+    <?php echo $book->getVirtualColumn('NbReviews') ?>
 
 ### Sorting On A Virtual Column ###
 

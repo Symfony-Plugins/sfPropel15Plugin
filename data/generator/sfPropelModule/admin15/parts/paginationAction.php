@@ -32,6 +32,10 @@
 
     $this->processSort($query);
     
+    foreach ($this->configuration->getWiths() as $with) {
+      $query->joinWith($with);
+    }
+    
     foreach ($this->configuration->getQueryMethods() as $method) {
       $query->$method();
     }
