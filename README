@@ -46,3 +46,87 @@ Propel 1.5 is a backwards compatible evolution of Propel 1.4 (the version bundle
         ->where('a.FirstName = ?', 'Leo')
         ->limit(10)
         ->find($con);
+
+## Admin Generator Extensions ##
+
+The plugin comes bundled with a new admin generator theme named 'admin15'. This theme provides additional features based on the new Propel 1.5 query objects, and is backwards compatible with sfPropelPlugin's admin generator theme.
+
+To enable this theme, edit your `generator.yml` and change the `theme` property from `admin` to `admin15`, as follows:
+
+    [yaml]
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           Book
+        theme:                 admin15
+        non_verbose_templates: true
+        with_show:             false
+        singular:              Book
+        plural:                Books
+        route_prefix:          book
+        with_propel_route:     1
+        actions_base_class:    sfActions
+
+You can now use the additional features listed below.
+
+*Tip*: Settings of the admin generator referencing the Peer classes are ignored in this theme. This includes `peer_method`, and `peer_count_method`. The new theme provides alternatives for these settings (see below).
+
+### Additional Query Methods ###
+
+You can executed additional query methods by setting the `query_methods` parameter. For instance, in a list of `Books`, to hydrate the `Author` object together with each `Book`, setup your `list` view as follows:
+
+    [yaml]
+    list:
+      display: [title, Author]
+      query_methods: [joinWithAuthor]
+
+The admin generator will then execute the following query to display the list:
+
+    [php]
+    $books = BookQuery::create()
+      ->joinWithAuthor()
+      ->paginate();
+
+Of course, you can add as many `query_methods` as you want, to hydrate multiple objects, or hide some results by default:
+
+    [yaml]
+    list:
+      display: [title, Author, Publisher]
+      query_methods: [joinWithAuthor, joinWithPublisher, filterByPublished]
+
+### Sorting On A Virtual Column ###
+
+The new theme provides an easy way to make virtual columns sortable in the list view. Just declare the corresponding fields with `is_sortable` to `true`, and the generated module will look for an `orderByXXX()` method in the generated query. For instance, to allow a book list to be sortable on the author name:
+
+    [yaml]
+    # in generator.yml
+    list:
+      display: [title, Author]
+      query_methods: [joinWithAuthor]
+      fields: 
+        - Author:      { is_sortable: true }
+
+Then the generator will try to execute `BookQuery::orderByAuthor()` whenever the user clicks on the `Author` header to sort on this column. The method must be implemented as follows:
+
+    [php]
+    class BookQuery extends BaseBookQuery
+    {
+      public function orderByAuthor($order = Criteria::ASC)
+      {
+        return $this
+          ->joinAuthor()
+          ->orderBy('Author.LastName', $order);
+      }
+    }
+
+You can override the default sorting method name for a field by setting the `sort_method` parameter:
+
+    [yaml]
+    # in generator.yml
+    list:
+      display: [title, Author]
+      query_methods: [joinWithAuthor]
+      fields: 
+        - Author:      { is_sortable: true, sort_method: orderByAuthorLastName }
+        
+The generator will execute `BookQuery::orderByAuthorLastName()` instead of `BookQuery::orderByAuthor()` in that case. 
