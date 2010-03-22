@@ -182,3 +182,14 @@ You can override the default sorting method name for a field by setting the `sor
         - Author:      { is_sortable: true, sort_method: orderByAuthorLastName }
         
 The generator will execute `BookQuery::orderByAuthorLastName()` instead of `BookQuery::orderByAuthor()` in that case. 
+
+### Filtering The List With GET Parameters ###
+
+The admin generator doesn't allow to filter the list using GET parameters. This neat feature used to be supported in previous versions of the generator, and is supported again in the `admin15` theme.
+
+All you have to do to filter a list view is to prepend a query string to the URL, describing the filters in a `filters` array. For instance, to link to the book list view filtered by Author, try the following link:
+
+    [php]
+    <?php echo link_to($author->getName(), 'book', array(), array('query_string' => 'filters[author_id]=' . $author->getId())) ?>
+
+This is very useful for partial lists, to link admin modules together.

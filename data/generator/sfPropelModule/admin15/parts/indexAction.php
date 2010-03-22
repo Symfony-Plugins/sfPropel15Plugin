@@ -1,5 +1,11 @@
   public function executeIndex(sfWebRequest $request)
   {
+    // filtering
+    if ($request->getParameter('filters'))
+    {
+      $this->setFilters($request->getParameter('filters'));
+    }
+    
     // sorting
     if ($request->getParameter('sort'))
     {
