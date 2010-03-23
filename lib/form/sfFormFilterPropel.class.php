@@ -135,29 +135,33 @@ abstract class sfFormFilterPropel extends sfFormFilter
 
       try
       {
-        $method = sprintf('add%sColumnCriteria', call_user_func(array($peer, 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME));
+        $ucField = call_user_func(array($peer, 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+        $isReal = true;
       }
       catch (Exception $e)
       {
-        // not a "real" column
-        if (!method_exists($this, $method = sprintf('add%sColumnCriteria', self::camelize($field))))
-        {
-          throw new LogicException(sprintf('You must define a "%s" method to be able to filter with the "%s" field.', $method, $field));
-        }
+        $ucField = self::camelize($field);
+        $isReal = false;
       }
-
-      if (method_exists($this, $method))
+      
+      if (method_exists($this, $method = sprintf('add%sColumnCriteria', $ucField)))
       {
+        // FormFilter::add[ColumnName]Criteria
         $this->$method($criteria, $field, $values[$field]);
+      }
+      elseif ($isReal && method_exists($this, $method = sprintf('add%sCriteria', $type)))
+      {
+        // FormFilter::add[ColumnType]Criteria
+        $this->$method($criteria, $field, $values[$field]);
+      }
+      elseif (method_exists($criteria, $method = sprintf('filterBy%s', $ucField)))
+      {
+        // ModelCriteria::filterBy[ColumnName]
+        $criteria->$method($values[$field]);
       }
       else
       {
-        if (!method_exists($this, $method = sprintf('add%sCriteria', $type)))
-        {
-          throw new LogicException(sprintf('Unable to filter for the "%s" type.', $type));
-        }
-
-        $this->$method($criteria, $field, $values[$field]);
+        throw new LogicException(sprintf('You must define a "%s" method in the %s class to be able to filter with the "%s" field.', sprintf('filterBy%s', $ucField), get_class($criteria), $field));
       }
     }
 

@@ -219,3 +219,44 @@ The `admin15` theme provides a shortcut for this situation. Just define the `lin
         Author: { link_module: author }
         
 You no longer need a partial for such simple cases. This should unclutter the `templates/` directory of your admin generator modules.
+
+### Easy Custom Filter ###
+
+Adding custom filters becomes very easy once you can take advantage of the generated Propel query classes. For example, in a list of `Books`, the default filters offer one text input for the book title, and a second one for the book ISBN. In order to replace them with a single text input, here is what you need to do:
+
+    [php]    
+    // in lib/filter/BookFormFilter.php
+    class BookFormFilter extends BaseBookFormFilter
+    {
+      public function configure()
+      {
+        $this->widgetSchema['full_text'] = new sfWidgetFormFilterInput(array('with_empty' => false));
+        $this->validatorSchema['full_text'] = new sfValidatorPass(array('required' => false));
+      }
+    }
+    
+    // in lib/model/Bookquery.php
+    class BookQuery extends BaseBookQuery
+    {
+      public function filterByFullText($value)
+      {
+        if (isset($value['text'])) {
+        $pattern = '%' . $value['text'] . '%';
+        $this
+          ->condition('condTitle', 'Book.Title LIKE ?', $pattern)
+          ->condition('condISBN', 'Book.ISBN LIKE ?', $pattern)
+          ->combine(array('condTitle', 'condISBN'), Criteria::LOGICAL_OR);
+        }
+        return $this;
+      }
+    }
+
+Now just modify the `filters.display` setting in the `generator.yml` to remove the `title` and `isbn` filters, and replace them with the new `full_text` filter:
+
+    [yaml]
+    # in modules/book/config/generator.yml
+    config:
+      filters:
+        display: [full_text]
+
+The amdin generator looks for a `filterByXXX()` method in the query class, where `XXX` is the CamelCase version of the custom filter you add.
