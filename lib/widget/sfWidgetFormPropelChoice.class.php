@@ -52,12 +52,14 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
   {
     $this->addRequiredOption('model');
     $this->addOption('add_empty', false);
-    $this->addOption('method', '__toString');
+    $this->addOption('method', '__toString'); 
     $this->addOption('key_method', 'getPrimaryKey');
     $this->addOption('order_by', null);
+    $this->addOption('query_methods', array());
     $this->addOption('criteria', null);
     $this->addOption('connection', null);
     $this->addOption('multiple', false);
+    // not used anymore
     $this->addOption('peer_method', 'doSelect');
 
     parent::configure($options, $attributes);
@@ -78,15 +80,22 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
 
     $class = constant($this->getOption('model').'::PEER');
 
-    $criteria = null === $this->getOption('criteria') ? new Criteria() : clone $this->getOption('criteria');
+    $criteria = PropelQuery::from($this->getOption('model'));
+    if ($this->getOption('criteria'))
+    {
+      $query->mergeWith($this->getOption('criteria'));
+    }
+    foreach ($this->getOption('query_methods') as $method)
+    {
+      $criteria->$method();
+    }
     if ($order = $this->getOption('order_by'))
     {
-      $method = sprintf('add%sOrderByColumn', 0 === strpos(strtoupper($order[1]), 'ASC') ? 'Ascending' : 'Descending');
-      $criteria->$method(call_user_func(array($class, 'translateFieldName'), $order[0], BasePeer::TYPE_PHPNAME, BasePeer::TYPE_COLNAME));
+      $criteria->orderBy($order[0], $order[1]);
     }
-    $objects = call_user_func(array($class, $this->getOption('peer_method')), $criteria, $this->getOption('connection'));
+    $objects = $criteria->find($this->getOption('connection'));
 
-    $methodKey = $this->getOption('key_method');
+		$methodKey = $this->getOption('key_method');
     if (!method_exists($this->getOption('model'), $methodKey))
     {
       throw new RuntimeException(sprintf('Class "%s" must implement a "%s" method to be rendered in a "%s" widget', $this->getOption('model'), $methodKey, __CLASS__));
@@ -102,7 +111,7 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
     {
       $choices[$object->$methodKey()] = $object->$methodValue();
     }
-
-    return $choices;
+		
+		return $choices;
   }
 }
