@@ -83,7 +83,7 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
     $criteria = PropelQuery::from($this->getOption('model'));
     if ($this->getOption('criteria'))
     {
-      $query->mergeWith($this->getOption('criteria'));
+      $criteria->mergeWith($this->getOption('criteria'));
     }
     foreach ($this->getOption('query_methods') as $method)
     {
