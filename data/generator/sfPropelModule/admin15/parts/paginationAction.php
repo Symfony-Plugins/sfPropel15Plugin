@@ -54,8 +54,6 @@
 <?php else: ?>
     $query = PropelQuery::from('<?php echo $this->getModelClass() ?>');
 <?php endif; ?>
-
-    $this->processSort($query);
     
     foreach ($this->configuration->getWiths() as $with) {
       $query->joinWith($with);
@@ -64,6 +62,8 @@
     foreach ($this->configuration->getQueryMethods() as $method) {
       $query->$method();
     }
+    
+    $this->processSort($query);
     
     $event = $this->dispatcher->filter(new sfEvent($this, 'admin.build_criteria'), $query);
     $query = $event->getReturnValue();
