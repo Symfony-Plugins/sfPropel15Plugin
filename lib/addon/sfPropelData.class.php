@@ -21,8 +21,30 @@ class sfPropelData extends sfData
 {
   protected
     $deletedClasses = array(),
-    $con            = null;
+    $con            = null,
+    $dispatcher     = null,
+    $formatter      = null;
 
+  /**
+   * Initializes the sfPropelData instance.
+   *
+   * @param sfEventDispatcher $dispatcher  A sfEventDispatcher instance
+   * @param sfFormatter       $formatter   A sfFormatter instance
+   */
+  public function initialize(sfEventDispatcher $dispatcher, sfFormatter $formatter)
+  {
+    $this->dispatcher = $dispatcher;
+    $this->formatter  = $formatter;
+  }
+  
+  public function log($message, $size = null, $style = 'INFO')
+  {
+    if ($this->dispatcher instanceof sfEventDispatcher)
+    {
+      $this->dispatcher->notify(new sfEvent($this, 'command.log', array($this->formatter->formatSection('Propel', $message, $size, $style))));
+    }
+  }
+  
   /**
    * Loads data from a file or directory into a Propel data source
    *
@@ -60,6 +82,17 @@ class sfPropelData extends sfData
     }
   }
 
+  /**
+   * Loads data for the database from a YAML file
+   *
+   * @param string $file The path to the YAML file.
+   */
+  protected function doLoadDataFromFile($file)
+  {
+    $this->log(sprintf('reading data from %s', $file));
+    parent::doLoadDataFromFile($file);
+  }
+  
   /**
    * Implements the abstract loadDataFromArray method and loads the data using the generated data model.
    *
@@ -254,7 +287,8 @@ class sfPropelData extends sfData
         {
           throw new InvalidArgumentException(sprintf('Unknown class "%sPeer".', $class));
         }
-
+        
+        $this->log(sprintf('deleting data from %s', $class));
         call_user_func(array(constant($class.'::PEER'), 'doDeleteAll'), $this->con);
 
         $this->deletedClasses[] = $class;

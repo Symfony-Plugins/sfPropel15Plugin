@@ -86,6 +86,7 @@ EOF;
     }
 
     $data = new sfPropelData();
+    $data->initialize($this->dispatcher, $this->formatter);
     $data->setDeleteCurrentData(!$options['append']);
 
     $dirs = array();
