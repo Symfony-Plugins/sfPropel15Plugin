@@ -223,9 +223,11 @@ class sfPropelFormGenerator extends sfGenerator
     switch ($column->getType())
     {
       case PropelColumnTypes::BOOLEAN:
+      case PropelColumnTypes::BOOLEAN_EMU:
         $name = 'InputCheckbox';
         break;
       case PropelColumnTypes::CLOB:
+      case PropelColumnTypes::CLOB_EMU:
       case PropelColumnTypes::LONGVARCHAR:
         $name = 'Textarea';
         break;

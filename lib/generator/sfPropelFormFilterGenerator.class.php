@@ -120,6 +120,7 @@ class sfPropelFormFilterGenerator extends sfPropelFormGenerator
     switch ($column->getType())
     {
       case PropelColumnTypes::BOOLEAN:
+      case PropelColumnTypes::BOOLEAN_EMU:
         $name = 'Choice';
         break;
       case PropelColumnTypes::DATE:
