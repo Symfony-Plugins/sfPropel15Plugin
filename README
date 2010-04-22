@@ -144,3 +144,17 @@ In practice, you won't need to build a custom Criteria object to achieve a custo
         ));
       }
     }
+
+### Updated Propel validators
+
+Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were updated to use the new PropelQuery objects, and to accept a `query_methods` option similat to the one of `sfWidgetFormPropelChoice`. So if you display a selection of items using a query method, you can validate this selection, too:
+
+    [php]
+    class ContentForm extends BaseContentForm
+    {
+      public function configure()
+      {
+        $this->widgetSchema['section']->setOption('query_methods', array('published'));
+        $this->validatorSchema['section']->setOption('query_methods', array('published'));
+      }
+    }

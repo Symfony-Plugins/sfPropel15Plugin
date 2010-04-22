@@ -24,6 +24,8 @@ class sfValidatorPropelChoice extends sfValidatorBase
    * Available options:
    *
    *  * model:      The model class (required)
+   *  * query_methods: An array of method names listing the methods to execute
+   *                on the model's query object
    *  * criteria:   A criteria to use when retrieving objects
    *  * column:     The column name (null by default which means we use the primary key)
    *                must be in field name format
@@ -37,6 +39,7 @@ class sfValidatorPropelChoice extends sfValidatorBase
   protected function configure($options = array(), $messages = array())
   {
     $this->addRequiredOption('model');
+    $this->addOption('query_methods', array());
     $this->addOption('criteria', null);
     $this->addOption('column', null);
     $this->addOption('connection', null);
@@ -53,7 +56,15 @@ class sfValidatorPropelChoice extends sfValidatorBase
    */
   protected function doClean($value)
   {
-    $criteria = null === $this->getOption('criteria') ? new Criteria() : clone $this->getOption('criteria');
+    $criteria = PropelQuery::from($this->getOption('model'));
+    if ($this->getOption('criteria'))
+    {
+      $criteria->mergeWith($this->getOption('criteria'));
+    }
+    foreach ($this->getOption('query_methods') as $method)
+    {
+      $criteria->$method();
+    }
 
     if ($this->getOption('multiple'))
     {
@@ -76,7 +87,7 @@ class sfValidatorPropelChoice extends sfValidatorBase
 
       $criteria->addAnd($this->getColumn(), $value, Criteria::IN);
 
-      $dbcount = call_user_func(array(constant($this->getOption('model').'::PEER'), 'doCount'), $criteria, $this->getOption('connection'));
+      $dbcount = $criteria->count($this->getOption('connection'));
 
       if ($dbcount != $count)
       {
@@ -87,7 +98,7 @@ class sfValidatorPropelChoice extends sfValidatorBase
     {
       $criteria->addAnd($this->getColumn(), $value);
 
-      $dbcount = call_user_func(array(constant($this->getOption('model').'::PEER'), 'doCount'), $criteria, $this->getOption('connection'));
+      $dbcount = $criteria->count($this->getOption('connection'));
 
       if (0 === $dbcount)
       {

@@ -41,10 +41,12 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
    *  * order_by:    An array composed of two fields:
    *                   * The column to order by the results (must be in the PhpName format)
    *                   * asc or desc
+   *  * query_methods: An array of method names listing the methods to execute
+   *                 on the model's query object
    *  * criteria:    A criteria to use when retrieving objects
    *  * connection:  The Propel connection to use (null by default)
    *  * multiple:    true if the select tag must allow multiple selections
-   *  * peer_method: The peer method to use to fetch objects
+   *  * peer_method: ignored - only supported for BC purpose
    *
    * @see sfWidgetFormSelect
    */
@@ -77,8 +79,6 @@ class sfWidgetFormPropelChoice extends sfWidgetFormChoice
     {
       $choices[''] = true === $this->getOption('add_empty') ? '' : $this->getOption('add_empty');
     }
-
-    $class = constant($this->getOption('model').'::PEER');
 
     $criteria = PropelQuery::from($this->getOption('model'));
     if ($this->getOption('criteria'))

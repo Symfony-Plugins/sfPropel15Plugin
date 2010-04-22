@@ -10,6 +10,7 @@
 
 /**
  * sfValidatorPropelUnique validates that the uniqueness of a column.
+ * This validator can only be used as a post validator.
  *
  * Warning: sfValidatorPropelUnique is susceptible to race conditions.
  * To avoid this issue, wrap the validation process and the model saving
@@ -43,6 +44,8 @@ class sfValidatorPropelUnique extends sfValidatorSchema
    *  * model:              The model class (required)
    *  * column:             The unique column name in Propel field name format (required)
    *                        If the uniquess is for several columns, you can pass an array of field names
+   *  * query_methods:      An array of method names listing the methods to execute
+   *                        on the model's query object
    *  * field               Field name used by the form, other than the column name
    *  * primary_key:        The primary key column name in Propel field name format (optional, will be introspected if not provided)
    *                        You can also pass an array if the table has several primary keys
@@ -55,6 +58,7 @@ class sfValidatorPropelUnique extends sfValidatorSchema
   {
     $this->addRequiredOption('model');
     $this->addRequiredOption('column');
+    $this->addOption('query_methods', array());
     $this->addOption('field', null);
     $this->addOption('primary_key', null);
     $this->addOption('connection', null);
@@ -84,13 +88,17 @@ class sfValidatorPropelUnique extends sfValidatorSchema
     }
     $fields = $this->getOption('field');
 
-    $criteria = new Criteria();
+    $criteria = PropelQuery::from($this->getOption('model'));
+    foreach ($this->getOption('query_methods') as $method)
+    {
+      $criteria->$method();
+    }
     foreach ($this->getOption('column') as $i => $column)
     {
       $name = isset($fields[$i]) ? $fields[$i] : $column;
       if (!array_key_exists($name, $values))
       {
-        // one of the column has be removed from the form
+        // one of the column has been removed from the form
         return $values;
       }
 
@@ -99,7 +107,7 @@ class sfValidatorPropelUnique extends sfValidatorSchema
       $criteria->add($colName, $values[$name]);
     }
 
-    $object = call_user_func(array(constant($this->getOption('model').'::PEER'), 'doSelectOne'), $criteria, $this->getOption('connection'));
+    $object = $criteria->findOne($this->getOption('connection'));
 
     // if no object or if we're updating the object, it's ok
     if (null === $object || $this->isUpdate($object, $values))
@@ -154,13 +162,8 @@ class sfValidatorPropelUnique extends sfValidatorSchema
     {
       $primaryKeys = array();
       $tableMap = call_user_func(array(constant($this->getOption('model').'::PEER'), 'getTableMap'));
-      foreach ($tableMap->getColumns() as $column)
+      foreach ($tableMap->getPrimaryKeys() as $column)
       {
-        if (!$column->isPrimaryKey())
-        {
-          continue;
-        }
-
         $primaryKeys[] = call_user_func(array(constant($this->getOption('model').'::PEER'), 'translateFieldName'), $column->getPhpName(), BasePeer::TYPE_PHPNAME, BasePeer::TYPE_FIELDNAME);
       }
 
