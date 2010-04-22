@@ -158,3 +158,5 @@ Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were update
         $this->validatorSchema['section']->setOption('query_methods', array('published'));
       }
     }
+
+The two widgets and the validator are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/form.txt) file in this plugin source code.
