@@ -1,0 +1,97 @@
+YAML Schema Reference
+=====================
+
+Propel Behaviors
+----------------
+
+Enable native Propel behaviors in your tables by setting the `_propel_behaviors` key. For instance, to turn on `soft_delete` on an `Article` table, write the following schema: 
+
+    [yaml]
+    propel:
+      article:
+        _attributes: { phpName: Article }
+        id:          ~
+        title:       varchar(150)
+        body:        longvarchar
+        _propel_behaviors:
+          soft_delete:
+
+Here is the list of Propel core behaviors available in this plugin: 
+
+- [timestampable](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/timestampable): Keep track of the creation and modification date of each record.
+- [sluggable](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/sluggable): Each row gets a unique slug that you can use to make smart URIs
+- [soft_delete]([http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/soft_delete): Keep the deleted rows hidden, so that you can recover them.
+- [nested_set](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/nested_set): Handle hierarchichal data with ease; the nested sets algorithm needs only one query to parse a tree in any way.
+- [sortable](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/sortable): Give rows in a table the ability to be moved up and down of a list, and to retrieve sorted results. 
+- [concrete_inheritance](http://www.propelorm.org/wiki/Documentation/1.5/Inheritance#ConcreteTableInheritance): Copy the structure of a model class to another; also copy the data back to the parent class, for efficient queries.
+- [query_cache](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/query_cache): Speed up often used queries by skipping the query analysis process. Propel will still query the database for results, only faster.
+- [alternative_coding_standards](http://www.propelorm.org/xiki/Documentation/1.5/Behaviors/alternative_coding_standards): Use symfony's coding standards in Propel's generated classes.
+- [auto_add_pk](http://www.propelorm.org/wiki/Documentation/1.5/Behaviors/auto_add_pk): Classes that don't have a primary key get one.
+
+You can register more than one behavior and set the parameters of each behaviors:
+
+    [yaml]
+    propel:
+      article:
+        _attributes: { phpName: Article }
+        id:          ~
+        title:       varchar(150)
+        body:        longvarchar
+        deleted_on:  timestamp
+        _propel_behaviors:
+          soft_delete: { deleted_column: deleted_on }
+          sluggable:
+          timestampable:
+
+You can also register a behavior for all your models right in the `propel.ini`. `sfPropel15Plugin` already enables the `symfony` and `symfony_i18n` behaviors to support symfony's behavior system and model localization features, but you can easily add your owns:
+
+    [ini]
+    propel.behavior.default = symfony,symfony_i18n,alternative_coding_standards,auto_add_pk
+
+**Tip**: Beware not to mix up native propel behaviors, documented in the Propel core, with symfony behaviors for Propel. Native propel behaviors are faster and more powerful, because they are executed at buildtime and not at runtime. Symfony behaviors for Propel, that usually require an additional plugin, are registered under the `_behaviors` key.
+
+Single Table Inheritance
+------------------------
+
+To enable single table inheritance in a table, define a type column, and add the `_inheritance` key, as follows:
+
+    [yaml]
+    propel:
+      person:
+        _attributes: { phpName: Person }
+        id:          ~
+        name:        varchar(100)
+        type:        varchar(20)
+        _inheritance:
+          column:    type
+          classes:
+            type_1:  Employee
+            type_2:  Manager
+
+The keys used in the `classes` hash define the value given to the inheritance column in the database, while the value determine the actual class names.
+
+Such a schema will generate both a Model and a Query class for `Employee` and `Manager`, in addition to the ones generated for `Person`:
+
+    model/
+      Person.php
+      PersonPeer.php
+      PersonQuery.php
+      Employee.php
+      EmployeeQuery.php
+      Manager.php
+      ManagerQuery.php
+      
+A `PersonQuery` returns mixed results, of class `Person`, `Employee`, and `Manager`, while a `ManagerQuery` returns only objects of class `Manager`:
+
+    [php]
+    $person = new Person();
+    $person->setName('John');
+    $person->save();
+    $manager = new Manager();
+    $manager->setName('Jack');
+    $manager->save();
+    echo PersonQuery::create()->count();  // 2
+    echo ManagerQuery::create()->count(); // 1
+
+Relation Names
+--------------
