@@ -13,6 +13,7 @@ define('SF_DIR', dirname(__FILE__).'/../../../../lib/vendor/symfony/');
 // we need SQLite for functional tests
 if (!extension_loaded('SQLite') && !extension_loaded('pdo_SQLite'))
 {
+  echo "SQLite extension is required to run unit tests\n";
   return false;
 }
 
