@@ -1,5 +1,5 @@
 <?php
-define('SF_DIR', dirname(__FILE__).'/../../../../../../lib/vendor/symfony/');
+
 require_once SF_DIR. 'lib/autoload/sfCoreAutoload.class.php';
 sfCoreAutoload::register();
 
