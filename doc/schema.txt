@@ -95,3 +95,75 @@ A `PersonQuery` returns mixed results, of class `Person`, `Employee`, and `Manag
 
 Relation Names
 --------------
+
+When you define a foreign key, Propel creates a relationship. Both the objects involved in the relationship see it with a different name. By default, the relation name is the phpName of the related object. For instance, for a `user_id` foreign key in a `book` table:
+
+    [yaml]
+    propel:
+      user:
+        _attributes: { phpName: User }
+        id:          ~
+        first_name:  varchar(100)
+        last_name:   varchar(100)
+      book:
+        _attributes: { phpName: Book }
+        id:          ~
+        title:       varchar(150)
+        body:        longvarchar
+        user_id:     { type: integer, foreignTable: user, foreignReference: id, onDelete: cascade }
+
+Here, Propel creates a `User` relation on the `Book` object, and a `Book` relation on the `User` object. These relations are used to forge the foreign object getters and setters in the Model object, as well as the foreign object filters in the Query object:
+
+    [php]
+    $user = $book->getUser();
+    $user = UserQuery::create()
+      ->filterByBook($book)
+      ->findOne();
+    $books = $user->getBooks();
+    $books = BookQuery::create()
+      ->filterByUser($user)
+      ->find();
+
+You may want to customize the relation names to qualify the relationship. In the previous example, when related to an `Article`, a `User` would better be called an `Author`. Symmetrically, from the `User` point of view, a `Book` should be named a `Work`. Use the `fkPhpName` and `fkRefPhpName` column attributes to choose custom relation names:
+
+[yaml]
+propel:
+  article:
+    _attributes: { phpName: Article }
+    id:          ~
+    title:       varchar(150)
+    body:        longvarchar
+    user_id:     { fkPhpName: Author, fkRefPhpName: Work, type: integer, foreignTable: user, foreignReference: id, onDelete: cascade }
+
+Now the generated code looks like this:
+
+    [php]
+    $user = $book->getAuthor();
+    $user = UserQuery::create()
+      ->filterByWork($book)
+      ->findOne();
+    $books = $user->getWorks();
+    $books = BookQuery::create()
+      ->filterByAuthor($user)
+      ->find();
+
+The ability to name both sides of a relationship becomes very handy when you have to deal with several foreign keys to the same table.
+
+Custom BaseObject
+-----------------
+
+By default, the generated Model objects extend BaseObject. You can customize this parent class on a per table basis by overriding the `baseClass` attribute:
+
+    [yaml]
+    propel:
+      person:
+        _attributes: { phpName: Person, baseClass: myBaseObject }
+        id:          ~
+        name:        varchar(100)
+        type:        varchar(20)
+
+A `build-model` will then produce:
+
+    [php]
+    class Person extends BasePerson
+    abstract class BasePerson extends myBaseObject
