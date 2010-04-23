@@ -10,6 +10,7 @@
     }
 
     $this->filters = $this->configuration->getFilterForm($this->getFilters());
+<?php echo $this->getFormCustomization('filter', 'filters') ?>
 
     $this->filters->bind($request->getParameter($this->filters->getName()));
     if ($this->filters->isValid())

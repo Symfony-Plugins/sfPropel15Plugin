@@ -23,31 +23,7 @@
     if (null === $this->filters)
     {
       $this->filters = $this->configuration->getFilterForm($this->getFilters());
-      foreach ($this->configuration->getFieldsFilter() as $key => $field)
-      {
-       if (isset($field['widget']))
-       {
-         $widget = $field['widget'];
-         $options = (isset($widget['options'])) ? $widget['options'] : array();
-         $attributes = (isset($widget['attributes'])) ? $widget['attributes'] : array();
-         if (isset($widget['class']))
-         {
-           $class = $widget['class'];
-           $this->filters->setWidget($key, new $class($options, $attributes));
-         }
-         else
-         {
-           foreach ($options as $name => $value)
-           {
-             $this->filters->getWidget($key)->setOption($name, $value);
-           }
-           foreach ($attributes as $name => $value)
-           {
-             $this->filters->getWidget($key)->setAttribute($name, $value);
-           }
-         }
-       }
-      }
+<?php echo $this->getFormCustomization('filter', 'filters') ?>
     }
 
     $query = $this->filters->buildCriteria($this->getFilters());

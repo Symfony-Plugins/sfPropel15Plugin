@@ -104,7 +104,7 @@ The plugin comes bundled with a new admin generator theme named 'admin15'. This 
 
 ### Filter and Edit forms enhancement
 
-- **YAML widget customization**: The `generator.yml` format was extended to allow basic widget customization directly in YAML, without the need to edit a form object.
+- **YAML widget customization**: The `generator.yml` format was extended to allow widget and validator customization directly in YAML, without the need to edit a form object. You can also safely omit a field from a `display` list in a form definition, without any risk to loose data.
 
 The new options for the `admin15` generator theme are fully documented, and illustrated by real life examples, in the [`doc/admin_generator.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/admin_generator.txt) file in this plugin source code.
 

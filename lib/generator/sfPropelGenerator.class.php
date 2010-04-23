@@ -354,4 +354,157 @@ class sfPropelGenerator extends sfModelGenerator
 
     return call_user_func(array($peer, 'translateFieldName'), $field, BasePeer::TYPE_COLNAME, $to);
   }
+  
+  /**
+   * Get the code to modify a form object based on fields configuration.
+   *
+   * Configuration attributes considered for customization:
+   *  * widgetClass
+   *  * widgetOptions
+   *  * widgetAttributes (same effect as the 'attributes' attribute)
+   *  * validatorClass
+   *  * validatorOptions
+   *  * validatorMessages
+   *
+   * This also removes unused fields from the display list.
+   *
+   * <code>
+   * form:
+   *   display: [foo1, foo2]
+   *   fields:
+   *     foo1: { widgetOptions: { bar: baz } }
+   *     foo2: { widgetClass: sfWidgetFormInputText, validatorClass: sfValidatorPass }   
+   * $form->getWidget('foo1')->setOption('bar', 'baz');
+   * $form->setWidget('foo2', new sfWidgetFormInputText());
+   * $form->setValidator('foo2', new sfValidatorPass());
+   * unset($form['foo']);
+   * </code>
+   *
+   * @param string $view Choices are 'edit', 'new', or 'filter'
+   * @param string $formVariableName The name of the variable referencing the form.
+   *                                 Choices are 'form', or 'filters'
+   *
+   * @return string the form customization code
+   */
+  public function getFormCustomization($view, $formVariableName = 'form')
+  {
+    $customization = '';
+    $class = $this->getSingularName();
+    $form = $this->configuration->getForm(new $class()); // fallback field definition
+    $defaultFieldNames = array_keys($form->getWidgetSchema()->getFields());
+    $unusedFields = array_combine($defaultFieldNames, $defaultFieldNames);
+    $fieldsets = ($view == 'filter') ? array('NONE' => $this->configuration->getFormFilterFields($form)) : $this->configuration->getFormFields($form, $view);
+    
+    foreach ($fieldsets as $fieldset => $fields)
+    {
+      foreach ($fields as $fieldName => $field) 
+      {
+        // widget customization
+        if (!$widgetConfig = $field->getConfig('widget', array()))
+        {
+          if ($widgetClass = $field->getConfig('widgetClass', false))
+          {
+            $widgetConfig['class'] = $widgetClass;
+          }
+          if ($widgetOptions = $field->getConfig('widgetOptions', false))
+          {
+            $widgetConfig['options'] = $widgetOptions;
+          }
+          if ($widgetAttributes = $field->getConfig('widgetAttributes', false))
+          {
+            $widgetConfig['attributes'] = $widgetAttributes;
+          }
+        }
+        if ($widgetConfig) 
+        {
+          $options = (isset($widgetConfig['options'])) ? $widgetConfig['options'] : array();
+          $attributes = (isset($widgetConfig['attributes'])) ? $widgetConfig['attributes'] : array();
+          if (isset($widgetConfig['class']))
+          {
+            $class = $widgetConfig['class'];
+            $customization .= "    \$this->" . $formVariableName . "->setWidget('$fieldName', new $class(" . $this->asPhp($options) . ", " . $this->asPhp($attributes) . "));
+";
+          }
+          else
+          {
+            foreach ($options as $name => $value)
+            {
+              $customization .= "    \$this->" . $formVariableName . "->getWidget('$fieldName')->setOption('$name', " . $this->asPhp($value) . ");
+";
+            }
+            foreach ($attributes as $name => $value)
+            {
+              $customization .= "    \$this->" . $formVariableName . "->getWidget('$fieldName')->setAttribute('$name', " . $this->asPhp($value) . ");
+";
+            }
+          }
+        }
+        
+        // validator configuration
+        if (!$validatorConfig = $field->getConfig('validator', array()))
+        {
+          if ($validatorClass = $field->getConfig('validatorClass', false))
+          {
+            $validatorConfig['class'] = $validatorClass;
+          }
+          if ($validatorOptions = $field->getConfig('validatorOptions', false))
+          {
+            $validatorConfig['options'] = $validatorOptions;
+          }
+          if ($validatorMessages = $field->getConfig('validatorMessages', false))
+          {
+            $validatorConfig['messages'] = $validatorMessages;
+          }
+        }
+        if ($validatorConfig) 
+        {
+          $options = (isset($validatorConfig['options'])) ? $validatorConfig['options'] : array();
+          $messages = (isset($validatorConfig['messages'])) ? $validatorConfig['messages'] : array();
+          if (isset($validatorConfig['class']))
+          {
+            $class = $validatorConfig['class'];
+            $customization .= "    \$this->" . $formVariableName . "->setValidator('$fieldName', new $class(" . $this->asPhp($options) . ", " . $this->asPhp($messages) . "));
+";
+          }
+          else
+          {
+            foreach ($options as $name => $value)
+            {
+              $customization .= "    \$this->" . $formVariableName . "->getValidator('$fieldName')->setOption('$name', " . $this->asPhp($value) . ");
+";
+            }
+            foreach ($messages as $name => $value)
+            {
+              $customization .= "    \$this->" . $formVariableName . "->getValidator('$fieldName')->setMessage('$name', " . $this->asPhp($value) . ");
+";
+            }
+          }
+        }
+
+        // this field is used
+        if (isset($unusedFields[$fieldName]))
+        {
+          unset($unusedFields[$fieldName]);
+        }
+      }
+    }
+    
+    // remove unused fields
+    if (!empty($unusedFields))
+    {
+      foreach ($unusedFields as $field)
+      {
+        // ignore primary keys and CSRF
+        if ($form->getWidget($field) instanceof sfWidgetFormInputHidden 
+         || $form->getCSRFFieldName() == $field)
+        {
+          continue;
+        }
+        $customization .= "    unset(\$this->" . $formVariableName . "['$field']);
+";
+      }
+    }
+    
+    return $customization;
+  }
 }

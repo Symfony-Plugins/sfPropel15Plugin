@@ -205,6 +205,10 @@ abstract class sfFormFilterPropel extends sfFormFilter
     {
       $criteria->add($colname, '%'.$values['text'].'%', Criteria::LIKE);
     }
+    else if (is_scalar($values) && '' != $values)
+    {
+      $criteria->add($colname, '%'.$values.'%', Criteria::LIKE);
+    }
   }
 
   protected function addNumberCriteria(Criteria $criteria, $field, $values)
@@ -220,6 +224,10 @@ abstract class sfFormFilterPropel extends sfFormFilter
     else if (is_array($values) && isset($values['text']) && '' != $values['text'])
     {
       $criteria->add($colname, $values['text']);
+    }
+    else if (is_scalar($values) && '' != $values)
+    {
+      $criteria->add($colname, $values);
     }
   }
 

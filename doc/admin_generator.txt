@@ -45,7 +45,7 @@ Of course, you can add as many `with` names as you want, to hydrate multiple obj
       display: [title, Author, Publisher]
       with:    [Author, Publisher]
 
-*Tip*: Before adding relations to the `with` setting, check that you don't already have a filter on the foreign key column that already makes the query to list all the related objects. If it's the case, then Propel's Instance Pooling will make the `with` superfluous, as each call to a related object will not trigger an additional query anyway.
+**Tip**: Before adding relations to the `with` setting, check that you don't already have a filter on the foreign key column that already makes the query to list all the related objects. If it's the case, then Propel's Instance Pooling will make the `with` superfluous, as each call to a related object will not trigger an additional query anyway.
 
 Additional Query Methods
 ------------------------
@@ -220,20 +220,38 @@ Now just modify the `filters.display` setting in the `generator.yml` to remove t
 
 The amdin generator looks for a `filterByXXX()` method in the query class, where `XXX` is the CamelCase version of the custom filter you add.
 
-YAML Widget Customization
--------------------------
+YAML Form Customization
+-----------------------
 
-You can now change widget options directly from within the `generator.yml`. That means you no longer need to edit a form object for basic widget customization.
+You can now modify, add or remove widgets and validators directly from within the `generator.yml`, for all generator forms. That means you no longer need to edit a form object for basic widget customization.
 
-Just add your custom widget `class`, `options`, or `attributes` under the `widget` key of your field description. For instance, to add a custom order and CSS class to a choice widget in the edit form, the following YAML code is enough:
+This is made possible by five new field attributes that you can customize: `widgetClass`, `widgetOptions`, `validatorClass`, `validatorOptions`, and `validatorMessages`. Of course, you can still modify the HTML attributes of a widget by setting the `attributes` attribute.
 
-    [yaml]
-    # in modules/book/config/generator.yml
-    config:
-      edit:
-        display: [id, title, author_id]
-        fields:
-          author_id:
-            widget:
-              options:    { order_by: [LastName, asc] }
-              attributes: { class: authorList }
+**Tip**: You can also safely omit one of the form fields in the `display` list. The `admin15` generator theme takes care of unsetting the field in the form for you.
+
+For instance, to replace an input filter on a text column by a choice list, try the following:
+
+    [php]
+    filter:
+      fields:
+        sex: 
+          widgetClass:   sfWidgetFormChoice
+          widgetOptions: { choices: { '': '' , male: Male, female: Female } }
+
+To remove the "is empty" checkbox for a given filter, just set the relevant option in YAML:
+
+    [php]
+    filter:
+      fields:
+        title: 
+          widgetOptions: { with_empty: false }
+
+To replace a text input by a textarea in the edit form, change the input type:
+
+    [php]
+    form:
+      fields:
+        body:
+          widgetClass:   sfWidgetFormTextarea
+
+The configuration cascade works as usual for these attributes, so a field customization defined under the `form` key affects both the `new` and `edit` forms, and a field customization defined under the main `field` key affects all forms, including the filter form.
