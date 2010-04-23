@@ -1,7 +1,7 @@
 Form Extensions
 ===============
 
-The `sfPropel15Plugin` provides one widget and two validators, to help build and validate forms bound to a Model object.
+The `sfPropel15Plugin` provides two widgets and three validators, to help build and validate forms bound to a Model object.
 
 `sfWidgetPropelChoice` and `sfValidatorPropelChoice`
 ----------------------------------------------------
@@ -89,7 +89,6 @@ The `sfValidatorPropelChoice` validator accepts almost the same options:
 * `min`: The minimum number of values that need to be selected (this option is only active if multiple is true)
 * `max`: The maximum number of values that need to be selected (this option is only active if multiple is true)
 
-
 `sfValidatorPropelUnique`
 -------------------------
 
@@ -119,3 +118,36 @@ This validator supports the following options:
 * `primary_key`: The primary key column name in Propel field name format (optional, will be introspected if not provided). You can also pass an array if the table has several primary keys
 * `connection`: The Propel connection to use (null by default)
 * `throw_global_error`: Whether to throw a global error (false by default) or an error tied to the first field related to the column option array
+
+`sfWidgetFormPlain` and `sfValidatorSchemaRemove`
+-------------------------------------------------
+
+To display a field without any possiblity to change its value, no need to use a partial field. Just use the `sfWidgetFormPlain` widget to display the value in a div. Don't forget to disable the validator on that field, too, using the `sfValidatorPass` validator. 
+
+But symfony expects to receive all form fields for binding, including plain fields. If the field is not present in the request, symfony uses a null value, which may erase the data in the column you want to display. To avoid erasing data, use the new `sfValidatorSchemaRemove` to remove plain fields from the binding process. This is a post validator, and it expects an array of field names in the `fields` option.
+
+Here is an example for `created_at` and `updated_at` columns, that you may want to display without allowing their edition:
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        // ...
+        $this->widgetSchema['created_at']->setWidget(new sfWidgetFormPlain()));
+        $this->widgetSchema['updated_at']->setWidget(new sfWidgetFormPlain()));
+        $this->validatorSchema['created_at']->setValidator(new sfValidatorPass(array('required' => false)));
+        $this->validatorSchema['updated_at']->setValidator(new sfValidatorPass(array('required' => false)));
+        $this->mergePostValidator(
+          new sfValidatorSchemaRemove(array('fields' => array('created_at', 'updated_at')))
+        );
+      }
+    }
+
+**Tip**: If you use the admin generator, setting a field with `type: plain` produces the same effect, only in much less code.
+
+    [yaml]
+    edit:
+      fields:
+        created_at: { type: plain }
+        updated_at: { type: plain }

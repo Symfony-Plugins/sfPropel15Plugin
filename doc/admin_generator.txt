@@ -210,12 +210,12 @@ Adding custom filters becomes very easy once you can take advantage of the gener
       }
     }
 
-Now just modify the `filters.display` setting in the `generator.yml` to remove the `title` and `isbn` filters, and replace them with the new `full_text` filter:
+Now just modify the `filter.display` setting in the `generator.yml` to remove the `title` and `isbn` filters, and replace them with the new `full_text` filter:
 
     [yaml]
     # in modules/book/config/generator.yml
     config:
-      filters:
+      filter:
         display: [full_text]
 
 The amdin generator looks for a `filterByXXX()` method in the query class, where `XXX` is the CamelCase version of the custom filter you add.
@@ -238,7 +238,7 @@ For instance, to replace an input filter on a text column by a choice list, try 
           widgetClass:   sfWidgetFormChoice
           widgetOptions: { choices: { '': '' , male: Male, female: Female } }
 
-To remove the "is empty" checkbox for a given filter, just set the relevant option in YAML:
+To remove the "is empty" checkbox for a given filter, just set the relevant widget option in YAML:
 
     [php]
     filter:
@@ -246,7 +246,7 @@ To remove the "is empty" checkbox for a given filter, just set the relevant opti
         title: 
           widgetOptions: { with_empty: false }
 
-To replace a text input by a textarea in the edit form, change the input type:
+To replace a text input by a textarea in the edit form, change the widget class:
 
     [php]
     form:
@@ -255,3 +255,19 @@ To replace a text input by a textarea in the edit form, change the input type:
           widgetClass:   sfWidgetFormTextarea
 
 The configuration cascade works as usual for these attributes, so a field customization defined under the `form` key affects both the `new` and `edit` forms, and a field customization defined under the main `field` key affects all forms, including the filter form.
+
+Plain fields
+------------
+
+If you want to display some data in a form without allowing the user to edit it, use the `type: plain` attribute, just like in the old days of symfony 1.2. This is very useful for columns managed by the model, like `created_at` and `updated_at` columns:
+
+    [yaml]
+    # in modules/book/config/generator.yml
+    config:
+      edit:
+        display:      [title, author_id, created_at, updated_at]
+        fields:
+          created_at: { type: plain }
+          updated_at: { type: plain }
+
+This displays the field in the edit view, but not in a form input. Submitting the form will leave these fields unchanged - or, in the previous example, will let the model take care of their values.

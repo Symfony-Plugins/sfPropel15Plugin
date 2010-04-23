@@ -359,6 +359,7 @@ class sfPropelGenerator extends sfModelGenerator
    * Get the code to modify a form object based on fields configuration.
    *
    * Configuration attributes considered for customization:
+   *  * type
    *  * widgetClass
    *  * widgetOptions
    *  * widgetAttributes (same effect as the 'attributes' attribute)
@@ -373,10 +374,14 @@ class sfPropelGenerator extends sfModelGenerator
    *   display: [foo1, foo2]
    *   fields:
    *     foo1: { widgetOptions: { bar: baz } }
-   *     foo2: { widgetClass: sfWidgetFormInputText, validatorClass: sfValidatorPass }   
+   *     foo2: { widgetClass: sfWidgetFormInputText, validatorClass: sfValidatorPass }
+   *     foo3: { type: plain }  
    * $form->getWidget('foo1')->setOption('bar', 'baz');
    * $form->setWidget('foo2', new sfWidgetFormInputText());
    * $form->setValidator('foo2', new sfValidatorPass());
+   * $form->setWidget('foo3', new sfWidgetFormPlain());
+   * $form->setValidator('foo3', new sfValidatorPass(array('required' => false)));
+   * $form->mergePostValidator(new sfValidatorSchemaRemove(array('fields' => array('foo3'))));
    * unset($form['foo']);
    * </code>
    *
@@ -394,11 +399,22 @@ class sfPropelGenerator extends sfModelGenerator
     $defaultFieldNames = array_keys($form->getWidgetSchema()->getFields());
     $unusedFields = array_combine($defaultFieldNames, $defaultFieldNames);
     $fieldsets = ($view == 'filter') ? array('NONE' => $this->configuration->getFormFilterFields($form)) : $this->configuration->getFormFields($form, $view);
+    $plainFields = array();
     
     foreach ($fieldsets as $fieldset => $fields)
     {
       foreach ($fields as $fieldName => $field) 
       {
+        // plain widget
+        if ($field->getConfig('type', false) == 'plain')
+        {
+          $plainFields[]= $fieldName;
+          $customization .= "    \$this->" . $formVariableName . "->setWidget('$fieldName', new sfWidgetFormPlain());
+";
+          $customization .= "    \$this->" . $formVariableName . "->setValidator('$fieldName', new sfValidatorPass(array('required' => false)));
+";
+        }
+        
         // widget customization
         if (!$widgetConfig = $field->getConfig('widget', array()))
         {
@@ -487,6 +503,13 @@ class sfPropelGenerator extends sfModelGenerator
           unset($unusedFields[$fieldName]);
         }
       }
+    }
+    
+    // remove plain fields from validation
+    if (!empty($plainFields))
+    {
+      $customization .= "    \$this->" . $formVariableName . "->mergePostValidator(new sfValidatorSchemaRemove(array('fields' => " . $this->asPhp($plainFields) .  ")));
+";
     }
     
     // remove unused fields
