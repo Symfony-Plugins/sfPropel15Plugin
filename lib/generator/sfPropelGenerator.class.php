@@ -517,9 +517,9 @@ class sfPropelGenerator extends sfModelGenerator
     {
       foreach ($unusedFields as $field)
       {
-        // ignore primary keys and CSRF
+        // ignore primary keys, CSRF, and embedded forms
         if ($form->getWidget($field) instanceof sfWidgetFormInputHidden 
-         || $form->getCSRFFieldName() == $field)
+         || $form->getWidget($field) instanceof sfWidgetFormSchemaDecorator)
         {
           continue;
         }
