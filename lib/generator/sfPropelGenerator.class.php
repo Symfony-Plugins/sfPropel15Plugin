@@ -394,8 +394,7 @@ class sfPropelGenerator extends sfModelGenerator
   public function getFormCustomization($view, $formVariableName = 'form')
   {
     $customization = '';
-    $class = $this->getSingularName();
-    $form = $this->configuration->getForm(new $class()); // fallback field definition
+    $form = $this->configuration->getForm(); // fallback field definition
     $defaultFieldNames = array_keys($form->getWidgetSchema()->getFields());
     $unusedFields = array_combine($defaultFieldNames, $defaultFieldNames);
     $fieldsets = ($view == 'filter') ? array('NONE' => $this->configuration->getFormFilterFields($form)) : $this->configuration->getFormFields($form, $view);
