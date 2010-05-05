@@ -134,10 +134,10 @@ Here is an example for `created_at` and `updated_at` columns, that you may want 
       public function configure()
       {
         // ...
-        $this->widgetSchema['created_at']->setWidget(new sfWidgetFormPlain()));
-        $this->widgetSchema['updated_at']->setWidget(new sfWidgetFormPlain()));
-        $this->validatorSchema['created_at']->setValidator(new sfValidatorPass(array('required' => false)));
-        $this->validatorSchema['updated_at']->setValidator(new sfValidatorPass(array('required' => false)));
+        $this->setWidget('created_at', new sfWidgetFormPlain());
+        $this->setWidget('updated_at', new sfWidgetFormPlain());
+        $this->setValidator('created_at', new sfValidatorPass(array('required' => false)));
+        $this->setValidator('updated_at', new sfValidatorPass(array('required' => false)));
         $this->mergePostValidator(
           new sfValidatorSchemaRemove(array('fields' => array('created_at', 'updated_at')))
         );
