@@ -205,6 +205,34 @@ As an alternative to the `index` column attribute, you can add indexes under the
 
 The alternative syntax is useful only for indexes built on more than one column.
 
+Many-to-Many relationships
+--------------------------
+
+Cross-reference tables, used for many-to-many relationships, must declare with an `isCrossRef` attribute set to `true`:
+
+    [yml]
+    propel:
+      blog_article:
+        # columns definition
+      
+      blog_author:
+        # columns definition
+      
+      blog_article_author:
+        _attributes: { phpName: ArticleAuthor, isCrossRef: true }
+        article_id:  { type: integer, foreignTable: blog_article, foreignReference: id, onDelete: cascade }
+        author_id:   { type: integer, foreignTable: blog_author, foreignReference: id, onDelete: cascade }
+
+Declaring a table as a cross reference table leads Propel to generate more methods in the Model and Query classes, including:
+
+    [php]
+    Article::getAuthors()
+    Article::countAuthors()
+    ArticleQuery::filterByAuthor($author)
+    Author::getArticles()
+    Author::countArticles()
+    AuthorQuery::filterByArticle($article)
+    
 I18n Tables
 -----------
 
