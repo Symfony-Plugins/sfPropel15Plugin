@@ -83,7 +83,9 @@ Propel 1.5 bundles most common behaviors in a new, robust buildtime implementati
         id: ~
         title: { type: varchar(100), required: true primaryString: true }
 
-You can also register a behavior for all your models right in the `propel.ini`. `sfPropel15Plugin` already enables the `symfony` and `symfony_i18n` behaviors to support symfony's behavior system and model localization features, but you can easily add your owns:
+**Tip**: Check the [`doc/schema.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/schema.txt) file in this plugin source code for a complete reference of the YAML schema format.
+
+You can also register a behavior for all your models right in the `propel.ini` configuration file. `sfPropel15Plugin` already enables the `symfony` and `symfony_i18n` behaviors to support symfony's behavior system and model localization features, but you can easily add your owns:
 
     [ini]
     propel.behavior.default = symfony,symfony_i18n,alternative_coding_standards,auto_add_pk
@@ -95,7 +97,7 @@ The plugin comes bundled with a new admin generator theme named 'admin15'. This 
 
 ### List view enhancements
 
-- **Easy related objects hydration**: You don't need to write custom diSelectJoinXXX() methods to hydrate related objects. The `with` setting is much more poxwerful that the previous `peer_method` and `peer_count_method` settings, and much easier to use.
+- **Easy related objects hydration**: You don't need to write custom `doSelectJoinXXX()` methods to hydrate related objects. The `with` setting is much more poxwerful that the previous `peer_method` and `peer_count_method` settings, and much easier to use.
 - **Custom query methods**: You can refine the query executed to display the list view by by setting the `query_methods` parameter. This allows to hydrate an additional column wit hno additional query, or to pre-filter the list to hide rows that the user shouldn't see.
 - **All columns are sortable**: Virtual columns and foreign key columns are now sortable in the list view. You'll need to set the sort method to use for that, but it's a one-liner. No more lists with column headers that can't be clicked for sorting!
 - **Easy links to filtered lists**: A link to a fitlered list view is very easy to write with the new theme. Just add GET parameter, the same way you used to do with the admin generator in symfony 1.2, and it works
