@@ -83,7 +83,7 @@ Propel 1.5 bundles most common behaviors in a new, robust buildtime implementati
         id: ~
         title: { type: varchar(100), required: true primaryString: true }
 
-**Tip**: Check the [`doc/schema.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/schema.txt) file in this plugin source code for a complete reference of the YAML schema format.
+**Tip**: Check the [`doc/schema.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/schema.txt) file in this plugin source code for a complete reference of the YAML schema format.
 
 You can also register a behavior for all your models right in the `propel.ini` configuration file. `sfPropel15Plugin` already enables the `symfony` and `symfony_i18n` behaviors to support symfony's behavior system and model localization features, but you can easily add your owns:
 
@@ -109,7 +109,7 @@ The plugin comes bundled with a new admin generator theme named 'admin15'. This 
 - **YAML widget customization**: The `generator.yml` format was extended to allow widget and validator customization directly in YAML, without the need to edit a form object. You can also safely omit a field from a `display` list in a form definition, without any risk to loose data.
 - **Plain text widget**: If you want to display some data in a form without allowing the user to edit it, use the `type: plain` attribute, just like in the old days of symfony 1.2. This is very useful for columns managed by the model, like `created_at` and `updated_at` columns.
 
-The new options for the `admin15` generator theme are fully documented, and illustrated by real life examples, in the [`doc/admin_generator.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/admin_generator.txt) file in this plugin source code.
+The new options for the `admin15` generator theme are fully documented, and illustrated by real life examples, in the [`doc/admin_generator.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/admin_generator.txt) file in this plugin source code.
 
 Form Subframework Modifications
 -------------------------------
@@ -162,4 +162,4 @@ Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were update
       }
     }
 
-The two widgets and the validator are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/doc/form.txt) file in this plugin source code.
+The two widgets and the validator are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/form.txt) file in this plugin source code.
