@@ -32,7 +32,7 @@ class sfPropelGenerateAdminTask extends sfPropelBaseTask
 
     $this->addOptions(array(
       new sfCommandOption('module', null, sfCommandOption::PARAMETER_REQUIRED, 'The module name', null),
-      new sfCommandOption('theme', null, sfCommandOption::PARAMETER_REQUIRED, 'The theme name', 'admin'),
+      new sfCommandOption('theme', null, sfCommandOption::PARAMETER_REQUIRED, 'The theme name', 'admin15'),
       new sfCommandOption('singular', null, sfCommandOption::PARAMETER_REQUIRED, 'The singular name', null),
       new sfCommandOption('plural', null, sfCommandOption::PARAMETER_REQUIRED, 'The plural name', null),
       new sfCommandOption('env', null, sfCommandOption::PARAMETER_REQUIRED, 'The environment', 'dev'),
@@ -64,7 +64,7 @@ For the filters and batch actions to work properly, you need to add
 the [with_wildcard_routes|COMMENT] option to the route:
 
   article:
-    class: sfPropelRouteCollection
+    class: sfPropel15RouteCollection
     options:
       model:                Article
       with_wildcard_routes: true
@@ -120,7 +120,7 @@ EOF;
       $module = $options['module'] ? $options['module'] : $name;
       $content = sprintf(<<<EOF
 %s:
-  class: sfPropelRouteCollection
+  class: sfPropel15RouteCollection
   options:
     model:                %s
     module:               %s
@@ -146,7 +146,7 @@ EOF
   {
     $routeOptions = $arguments['route']->getOptions();
 
-    if (!$arguments['route'] instanceof sfPropelRouteCollection)
+    if (!$arguments['route'] instanceof sfPropel15RouteCollection)
     {
       throw new sfCommandException(sprintf('The route "%s" is not a Propel collection route.', $arguments['route_name']));
     }
@@ -197,7 +197,7 @@ EOF
    */
   protected function checkRoute($route, $model, $module)
   {
-    if ($route instanceof sfPropelRouteCollection)
+    if ($route instanceof sfPropel15RouteCollection)
     {
       $options = $route->getOptions();
       return $model == $options['model'] && $module == $options['module'];
