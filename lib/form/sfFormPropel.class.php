@@ -20,7 +20,6 @@
  */
 abstract class sfFormPropel extends sfFormObject
 {
-  protected $ignoreIfEmpty = false;
   protected $fixedValues = array();
   
   /**
@@ -98,7 +97,6 @@ abstract class sfFormPropel extends sfFormObject
    */
   protected function doUpdateObject($values)
   {
-    print_r($values);
     $values = array_merge($values, $this->getFixedValues());
     $this->getObject()->fromArray($values, BasePeer::TYPE_FIELDNAME);
   }
@@ -361,11 +359,12 @@ abstract class sfFormPropel extends sfFormObject
   public function getRelationForm($relationName, $options = array())
   {
     $options = array_merge(array(
-      'embedded_form_class' => null,
-      'item_pattern'        => '%index%',
-      'add_empty'           => false,
-      'empty_name'          => null,
-      'hide_on_new'         => false,
+      'collection_form_class' => 'sfFormPropelCollection',
+      'embedded_form_class'   => null,
+      'item_pattern'          => '%index%',
+      'add_empty'             => false,
+      'empty_name'            => null,
+      'hide_on_new'           => false,
     ), $options);
     
     if ($this->getObject()->isNew() && $options['hide_on_new'])
@@ -392,7 +391,8 @@ abstract class sfFormPropel extends sfFormObject
     }
     
     // create the relation form
-    $collectionForm = new sfFormPropelCollection($collection, array(
+    $collectionFormClass = $options['collection_form_class'];
+    $collectionForm = new $collectionFormClass($collection, array(
       'embedded_form_class' => $options['embedded_form_class'],
       'item_pattern'        => $options['item_pattern'],
       'remove_fields'       => $relationFields,
