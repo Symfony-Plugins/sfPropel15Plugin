@@ -233,6 +233,15 @@ EOF;
 
 EOF;
 
+    if ($this->getTable()->getChildrenColumn())
+    {
+      $newObject = "\$cls = {$this->getTable()->getPhpName()}Peer::getOMClass(\$row, 0, false)";
+    }
+    else
+    {
+      $newObject = "\$cls = {$this->getTable()->getPhpName()}Peer::getOMClass(false)";
+    }
+    
     return <<<EOF
 
 /**
@@ -285,7 +294,7 @@ static public function doSelectWithI18n(Criteria \$criteria, \$culture = null, \
   		// See http://propel.phpdb.org/trac/ticket/509
   		// \$obj1->hydrate(\$row, 0, true); // rehydrate
   	} else {
-			\$cls = {$this->getTable()->getPhpName()}Peer::getOMClass(false);
+			{$newObject};
 			\$obj1 = new \$cls();
 			\$obj1->hydrate(\$row);
       {$this->getTable()->getPhpName()}Peer::addInstanceToPool(\$obj1, \$key1);
