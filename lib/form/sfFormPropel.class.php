@@ -20,6 +20,9 @@
  */
 abstract class sfFormPropel extends sfFormObject
 {
+  protected $ignoreIfEmpty = false;
+  protected $fixedValues = array();
+  
   /**
    * Constructor.
    *
@@ -58,7 +61,7 @@ abstract class sfFormPropel extends sfFormObject
    */
   public function getConnection()
   {
-    return Propel::getConnection(constant(constant(get_class($this->getObject()).'::PEER').'::DATABASE_NAME'));
+    return Propel::getConnection(constant($this->getPeer().'::DATABASE_NAME'));
   }
 
   /**
@@ -95,6 +98,8 @@ abstract class sfFormPropel extends sfFormObject
    */
   protected function doUpdateObject($values)
   {
+    print_r($values);
+    $values = array_merge($values, $this->getFixedValues());
     $this->getObject()->fromArray($values, BasePeer::TYPE_FIELDNAME);
   }
 
@@ -118,7 +123,7 @@ abstract class sfFormPropel extends sfFormObject
     {
       try
       {
-        $method = sprintf('update%sColumn', call_user_func(array(constant(get_class($this->getObject()).'::PEER'), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME));
+        $method = sprintf('update%sColumn', call_user_func(array($this->getPeer(), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME));
       }
       catch (Exception $e)
       {
@@ -229,7 +234,7 @@ abstract class sfFormPropel extends sfFormObject
 
     if (!$values[$field])
     {
-      $column = call_user_func(array(constant(get_class($this->getObject()).'::PEER'), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+      $column = call_user_func(array($this->getPeer(), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
       $getter = 'get'.$column;
 
       return $this->getObject()->$getter();
@@ -258,7 +263,7 @@ abstract class sfFormPropel extends sfFormObject
       throw new LogicException(sprintf('You cannot remove the current file for field "%s" as the field is not a file.', $field));
     }
 
-    $column = call_user_func(array(constant(get_class($this->getObject()).'::PEER'), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+    $column = call_user_func(array($this->getPeer(), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
     $getter = 'get'.$column;
 
     if (($directory = $this->validatorSchema[$field]->getOption('path')) && is_file($directory.DIRECTORY_SEPARATOR.$this->getObject()->$getter()))
@@ -266,7 +271,12 @@ abstract class sfFormPropel extends sfFormObject
       unlink($directory.DIRECTORY_SEPARATOR.$this->getObject()->$getter());
     }
   }
-
+  
+  public function getPeer()
+  {
+    return constant(get_class($this->getObject()).'::PEER');
+  }
+  
   /**
    * Saves the current file for the field.
    *
@@ -288,7 +298,7 @@ abstract class sfFormPropel extends sfFormObject
       $file = $this->getValue($field);
     }
 
-    $column = call_user_func(array(constant(get_class($this->getObject()).'::PEER'), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+    $column = call_user_func(array($this->getPeer(), 'translateFieldName'), $field, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
     $method = sprintf('generate%sFilename', $column);
 
     if (null !== $filename)
@@ -308,4 +318,121 @@ abstract class sfFormPropel extends sfFormObject
       return $file->save();
     }
   }
+  
+  /**
+   * Overrides sfForm::mergeForm() to also merge embedded forms
+   * Allows autosave of marged collections
+   *
+   * @param  sfForm   $form      The sfForm instance to merge with current form
+   *
+   * @throws LogicException      If one of the form has already been bound
+   */
+  public function mergeForm(sfForm $form)
+  {
+    foreach ($form->getEmbeddedForms() as $name => $embeddedForm)
+    {
+      $this->embedForm($name, clone $embeddedForm);
+    }
+    parent::mergeForm($form);
+  }
+  
+  /**
+   * Merge Relation form into this form
+   */
+  public function mergeRelation($relationName, $options = array())
+  {
+    $relationForm = $this->getRelationForm($relationName, $options);
+    
+    $this->mergeForm($relationForm);
+  }
+  
+  public function embedRelation($relationName, $options = array())
+  {
+    $options = array_merge(array(
+      'title'               => $relationName,
+      'decorator'           => null
+    ), $options);
+    
+    $relationForm = $this->getRelationForm($relationName, $options);
+    
+    $this->embedForm($options['title'], $relationForm, $options['decorator']);
+  }
+  
+  public function getRelationForm($relationName, $options = array())
+  {
+    $options = array_merge(array(
+      'embedded_form_class' => null,
+      'item_pattern'        => '%index%',
+      'add_empty'           => false,
+      'empty_name'          => null,
+      'hide_on_new'         => false,
+    ), $options);
+    
+    if ($this->getObject()->isNew() && $options['hide_on_new'])
+    {
+      return;
+    }
+    
+    // compute relation elements
+    $tableMap = call_user_func(array($this->getPeer(), 'getTableMap'));
+    $relationMap = $tableMap->getRelation($relationName);
+    if ($relationMap->getType() != RelationMap::ONE_TO_MANY)
+    {
+      throw new sfException('embedRelation() only works for one-to-many relationships');
+    }
+    $collection = call_user_func(array($this->getObject(), sprintf('get%ss', $relationName)));
+    $relatedPeer = $relationMap->getRightTable()->getPeerClassname();
+    
+    // compute relation fields, to be removed from embedded forms
+    // because this data is not editable
+    $relationFields = array();
+    foreach ($relationMap->getColumnMappings(RelationMap::LEFT_TO_RIGHT) as $leftCol => $rightCol)
+    {
+      $relationFields[$leftCol]= call_user_func(array($relatedPeer, 'translateFieldName'), $rightCol, BasePeer::TYPE_COLNAME, BasePeer::TYPE_FIELDNAME);
+    }
+    
+    // create the relation form
+    $collectionForm = new sfFormPropelCollection($collection, array(
+      'embedded_form_class' => $options['embedded_form_class'],
+      'item_pattern'        => $options['item_pattern'],
+      'remove_fields'       => $relationFields,
+    ));
+    
+    // add empty form for addition
+    // FIXME new relations saved at each edit
+    if ($options['add_empty'])
+    {
+      if (null === $options['empty_name']) {
+        $options['empty_name'] = 'new' . $relationMap->getName();
+      }
+      $relatedClass = $relationMap->getRightTable()->getClassname();
+      $formClass = $collectionForm->getFormClass();
+      $emptyForm = new $formClass(new $relatedClass());
+      $relationValues = array();
+      foreach ($relationFields as $leftCol => $field)
+      {
+        unset($emptyForm[$field]);
+        $emptyForm->setFixedValue($field, $this->getObject()->getByName($leftCol, BasePeer::TYPE_COLNAME));
+      }
+      $collectionForm->embedForm($options['empty_name'], $emptyForm);
+    }
+    
+    return $collectionForm;
+  }
+  
+  public function setFixedValues($values)
+  {
+    $this->fixedValues = $values;
+  }
+
+  public function setFixedValue($name, $value)
+  {
+    $this->fixedValues[$name] = $value;
+  }
+
+  public function getFixedValues()
+  {
+    return $this->fixedValues;
+  }
+
 }
