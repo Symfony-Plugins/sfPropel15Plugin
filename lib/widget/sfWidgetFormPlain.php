@@ -9,7 +9,7 @@
  */
 
 /**
- * sfWidgetFormTextarea represents a textarea HTML tag.
+ * sfWidgetFormPlain represents a non editable text.
  *
  * @package    symfony
  * @subpackage widget

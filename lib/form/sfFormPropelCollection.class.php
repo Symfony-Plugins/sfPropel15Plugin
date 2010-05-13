@@ -76,4 +76,35 @@ class sfFormPropelCollection extends sfForm
     
     return $class;
   }
+
+  /**
+   * Embeds an optional sfForm into the current form.
+   *
+   * @param string $name       The field name
+   * @param sfForm $form       A sfForm instance
+   * @param string $decorator  A HTML decorator for the embedded form
+   */
+  public function embedOptionalForm($name, sfForm $form, $decorator = null)
+  {
+    $name = (string) $name;
+    if (true === $this->isBound() || true === $form->isBound())
+    {
+      throw new LogicException('A bound form cannot be embedded');
+    }
+
+    $form = clone $form;
+    unset($form[self::$CSRFFieldName]);
+
+    $this->setDefault($name, $form->getDefaults());
+
+    $widgetSchema = $form->getWidgetSchema();
+    
+    $decorator = null === $decorator ? $widgetSchema->getFormFormatter()->getDecoratorFormat() : $decorator;
+
+    $this->widgetSchema[$name] = new sfWidgetFormSchemaOptional($widgetSchema, $decorator);
+    
+    $this->validatorSchema[$name] = new sfValidatorPass();
+
+    $this->resetFormFields();
+  }
 }

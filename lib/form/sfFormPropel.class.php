@@ -21,6 +21,7 @@
 abstract class sfFormPropel extends sfFormObject
 {
   protected $fixedValues = array();
+  protected $optionalForms = array();
   
   /**
    * Constructor.
@@ -90,6 +91,26 @@ abstract class sfFormPropel extends sfFormObject
 
       $this->embedForm($culture, $i18n, $decorator);
     }
+  }
+
+  /**
+   * Binds the form with input values.
+   *
+   * It triggers the validator schema validation.
+   *
+   * @param array $taintedValues  An array of input values
+   * @param array $taintedFiles   An array of uploaded files (in the $_FILES or $_GET format)
+   */
+  public function bind(array $taintedValues = null, array $taintedFiles = null)
+  {
+    foreach ($this->optionalForms as $name => $form) {
+      $i = 1;
+      while (isset($taintedValues[$name . $i])) {
+        $this->embedForm($name . $i, clone $form);
+        $i++;
+      }
+    }
+    return parent::bind($taintedValues, $taintedFiles);
   }
 
   /**
@@ -363,7 +384,7 @@ abstract class sfFormPropel extends sfFormObject
       'embedded_form_class'   => null,
       'item_pattern'          => '%index%',
       'add_empty'             => false,
-      'empty_name'            => null,
+      'empty_label'           => null,
       'hide_on_new'           => false,
     ), $options);
     
@@ -399,22 +420,22 @@ abstract class sfFormPropel extends sfFormObject
     ));
     
     // add empty form for addition
-    // FIXME new relations saved at each edit
     if ($options['add_empty'])
     {
-      if (null === $options['empty_name']) {
-        $options['empty_name'] = 'new' . $relationMap->getName();
-      }
       $relatedClass = $relationMap->getRightTable()->getClassname();
       $formClass = $collectionForm->getFormClass();
       $emptyForm = new $formClass(new $relatedClass());
-      $relationValues = array();
+      if ($label = $options['empty_label']) {
+        $emptyForm->getWidgetSchema()->setLabel($label);
+      }
       foreach ($relationFields as $leftCol => $field)
       {
         unset($emptyForm[$field]);
         $emptyForm->setFixedValue($field, $this->getObject()->getByName($leftCol, BasePeer::TYPE_COLNAME));
       }
-      $collectionForm->embedForm($options['empty_name'], $emptyForm);
+      $emptyName = 'new' . $relationMap->getName();
+      $collectionForm->embedOptionalForm($emptyName, $emptyForm);
+      $this->optionalForms[$emptyName] = $emptyForm;
     }
     
     return $collectionForm;
@@ -435,4 +456,8 @@ abstract class sfFormPropel extends sfFormObject
     return $this->fixedValues;
   }
 
+  public function __clone()
+  {
+    $this->object = clone $this->object;
+  }
 }
