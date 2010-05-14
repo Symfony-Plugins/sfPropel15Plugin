@@ -547,7 +547,7 @@ abstract class sfFormPropel extends sfFormObject
   /**
    * Embed a Collection form based on a Relation into this form.
    * Available options:
-   *  - title: The title of the colleciton form once embedded. Defaults to the relation name.
+   *  - title: The title of the collection form once embedded. Defaults to the relation name.
    *  - decorator: The decorator for the sfWidgetFormSchemaDecorator
    *  - add_empty: Whether to allow the user to add new objects to the collection. Defaults to true
    * Additional options are passed to sfFromPropel::getRelationForm()
@@ -598,6 +598,7 @@ abstract class sfFormPropel extends sfFormObject
     $options = array_merge(array(
       'hide_on_new'           => false,
       'collection_form_class' => 'sfFormPropelCollection',
+      'add_delete'            => true,
     ), $options);
     
     if ($this->getObject()->isNew() && $options['hide_on_new'])

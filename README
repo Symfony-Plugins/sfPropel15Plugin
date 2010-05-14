@@ -163,3 +163,16 @@ Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were update
     }
 
 The two widgets and the validator are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/form.txt) file in this plugin source code.
+
+### Easy Relation Embed
+
+Editing related objects together with the main objects (e.g., editing Comments in a Post form) is a piece of cake. The new `sfFormPropel::embedRelation()` method does all the work to fetch related objects, build the forms for each of them, and embed the related object forms into the main form. Embdeded relation forms allow to **edit**, **add**, and **delete** a related objects with no additional code.
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $this->embedRelation('Book');
+      }
+    }

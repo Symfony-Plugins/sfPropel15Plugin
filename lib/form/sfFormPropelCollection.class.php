@@ -17,6 +17,8 @@ class sfFormPropelCollection extends sfForm
    * Form constructor. 
    *
    * Available options:
+   * - embedded_form_class: The class name of the forms to embed. Uses the model name by default.
+   *                  (a form based on a collection of Book objects embeds BookForm objects)
    * - item_pattern:  The pattern used to name each embedded form. Defaults to '%index%'.
    * - add_delete:    Whether to add a delete widget for each object. Defaults to true.
    * - delete_name:   Name of the delete widget. Defaults to 'delete'.
@@ -38,7 +40,7 @@ class sfFormPropelCollection extends sfForm
   {
     $options = array_merge(array(
       'item_pattern'  => '%index%',
-      'add_delete'    => true,
+      'add_delete'    => false,
       'delete_name'   => 'delete',
       'delete_widget' => null,
       'remove_fields' => array(),

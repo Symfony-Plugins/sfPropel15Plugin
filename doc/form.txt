@@ -151,3 +151,56 @@ Here is an example for `created_at` and `updated_at` columns, that you may want 
       fields:
         created_at: { type: plain }
         updated_at: { type: plain }
+
+`sfFormPropelCollection`
+------------------------
+
+If you need to build a form based on a collection of objects rather than on a single object, then the `sfFormPropelCollection` class will help you. To create such a form, just pass a PropelObjectcollection instance to its constructor, and you can use the form as a regular Propel object form:
+
+    [php]
+    $collection = new PropelObjectCollection();
+    $collection->setModel('Book');
+    $collection[]= new Book();
+    $collection[]= new Book();
+    $collection[]= new Book();
+    $form = new sfFormPropelCollection($collection);
+    echo $form; // displays a list of 3 BookForms, bound to each element in the collection
+    
+Embedding A Relation Form
+-------------------------
+
+Since one-to-many relationships return `PropelCollection` objects, the ability to create a collection form, added to the ability to merge two forms together, makes the edition of related objects very straightforward.
+
+`sfPropelForm` provides a method called `embedRelation($relationName)`, which fetches a collection for a given relation, creates a `sfFormPropelCollection` instance based on the collection, and embeds this form into the main form. This allows,for instance, to edit an author together with all its books:
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $this->embedRelation('Book');
+      }
+    }
+
+Now the Article form displays the list of related books for each author, together with controls to add or remove Books for a given Author. No need to add code to the form object, it just works.
+
+**Tip**: `sfPropelForm` also supports `mergeRelation()`, which merges the individual forms from the colleciton form into the parent form. As for embedded forms, merged relation forms support addition and removal of related objects.
+
+`embedRelation()` offers many options to customize the embedded relation form:
+
+* `title`: The title of the collection form once embedded. Defaults to the relation name.
+* `embedded_form_class`: The class name of the forms to embed. Uses the model name by default (a form based on a collection of Book objects embeds BookForm objects).
+* `collection_form_class`: Class of the collection form to return. Defaults to sfFormPropelCollection.
+* `hide_on_new`: If true, the relation form does not appear for new objects. Defaults to false.
+* `add_empty`: Whether to allow the user to add new objects to the collection. Defaults to true.
+* `add_delete`: Whether to add a delete widget for each object. Defaults to true.
+* `remove_fields`: The list of fields to remove from the embedded object forms
+* `item_pattern`: The pattern used to name each embedded form. Defaults to '%index%'.
+
+If `add_delete` is set to `true`, the following additional options are available:
+
+* `delete_name`: Name of the delete widget. Defaults to 'delete'.
+* `delete_widget`: Optional delete widget object. If left null, uses a `sfWidgetFormDelete` instance, which is a checkbox widget with a Javascript confirmation.
+* `alert_text`: The text of the Javascript alert to show.
+* `hide_parent`: Whether to hide the deleted form when clicking the checkbox. Defaults to true.
+* `parent_level`: The number of times parentNode must be called to reach the parent to hide. As a widget doesn't know if it's merged or embedded, this setting allows the JavaScript code used to hide the parent to find it. Recommended values: 6 for embedded form (default), 7 for merged form.
