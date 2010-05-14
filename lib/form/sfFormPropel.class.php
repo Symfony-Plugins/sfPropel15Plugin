@@ -196,7 +196,11 @@ abstract class sfFormPropel extends sfFormObject
     $this->updateObject();
     
     // this is Propel specific
-    if(!$this->getObject()->isDeleted())
+    if(isset($this->getObject()->markForDeletion))
+    {
+      $this->getObject()->delete($con);
+    }
+    else
     {
       $this->getObject()->save($con);
     }
@@ -220,7 +224,7 @@ abstract class sfFormPropel extends sfFormObject
     {
       if (isset($values[$this->getDeleteField()]) && $values[$this->getDeleteField()])
       {
-        $this->getObject()->delete();
+        $this->getObject()->markForDeletion = true;
         return;
       }
     }
@@ -253,7 +257,11 @@ abstract class sfFormPropel extends sfFormObject
       {
         $form->saveEmbeddedForms($con);
         // this is Propel specific
-        if(!$form->getObject()->isDeleted())
+        if(isset($form->getObject()->markForDeletion))
+        {
+          $form->getObject()->delete($con);
+        }
+        else
         {
           $form->getObject()->save($con);
         }
@@ -609,7 +617,7 @@ abstract class sfFormPropel extends sfFormObject
     
     // compute relation fields, to be removed from embedded forms
     // because this data is not editable
-    $relationFields = $this->getRelationFields($relationMap);
+    $options['remove_fields'] = $this->getRelationFields($relationMap);
     
     // create the relation form
     $collectionFormClass = $options['collection_form_class'];
