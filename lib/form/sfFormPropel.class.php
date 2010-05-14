@@ -20,11 +20,6 @@
  */
 abstract class sfFormPropel extends sfFormObject
 {
-  /**
-   * List of fields that cannot be changed by the user, but still take a default value
-   * @var array
-   */
-  protected $fixedValues = array();
   
   /**
    * List of forms that can be added by the user
@@ -228,7 +223,6 @@ abstract class sfFormPropel extends sfFormObject
         return;
       }
     }
-    $values = array_merge($values, $this->getFixedValues());
     $this->getObject()->fromArray($values, BasePeer::TYPE_FIELDNAME);
   }
 
@@ -655,18 +649,30 @@ abstract class sfFormPropel extends sfFormObject
     }
     
     $relatedClass = $relationMap->getRightTable()->getClassname();
+    $relatedObject = new $relatedClass();
+    
+    // the relatedObject must be related to this form's object
+    // but without actually adding the relatedObject to the collection
+    // that's what the next lines do
+    $realRelatedObjects = call_user_func(array($this->getObject(), sprintf('get%ss', $relationName)))->getArrayCopy();
+    call_user_func(array($this->getObject(), sprintf('add%s', $relationName)), $relatedObject);
+    call_user_func(array($this->getObject(), sprintf('init%ss', $relationName)));
+    foreach ($realRelatedObjects as $realRelatedObject)
+    {
+      call_user_func(array($this->getObject(), sprintf('add%s', $relationName)), $realRelatedObject);
+    }
+    
     if (!$formClass = $options['embedded_form_class'])
     {
       $formClass = $relatedClass . 'Form';
     }
-    $emptyForm = new $formClass(new $relatedClass());
+    $emptyForm = new $formClass($relatedObject);
     if ($label = $options['empty_label']) {
       $emptyForm->getWidgetSchema()->setLabel($label);
     }
     foreach ($this->getRelationFields($relationMap) as $leftCol => $field)
     {
       unset($emptyForm[$field]);
-      $emptyForm->setFixedValue($field, $this->getObject()->getByName($leftCol, BasePeer::TYPE_COLNAME));
     }
     
     return $emptyForm;
@@ -687,21 +693,6 @@ abstract class sfFormPropel extends sfFormObject
       $relationFields[$leftCol]= call_user_func(array($relatedPeer, 'translateFieldName'), $rightCol, BasePeer::TYPE_COLNAME, BasePeer::TYPE_FIELDNAME);
     }
     return $relationFields;
-  }
-  
-  public function setFixedValues($values)
-  {
-    $this->fixedValues = $values;
-  }
-
-  public function setFixedValue($name, $value)
-  {
-    $this->fixedValues[$name] = $value;
-  }
-
-  public function getFixedValues()
-  {
-    return $this->fixedValues;
   }
   
   public function setDeleteField($fieldName)
