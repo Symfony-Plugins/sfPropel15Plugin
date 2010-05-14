@@ -103,16 +103,45 @@ abstract class sfFormPropel extends sfFormObject
    */
   public function bind(array $taintedValues = null, array $taintedFiles = null)
   {
-    foreach ($this->optionalForms as $name => $form) {
-      $i = 1;
-      while (isset($taintedValues[$name . $i])) {
-        $this->embedForm($name . $i, clone $form);
-        $i++;
-      }
-    }
+    $this->addOptionalForms($taintedValues);
     return parent::bind($taintedValues, $taintedFiles);
   }
-
+  
+  public function addOptionalForms($taintedValues = null)
+  {
+    foreach ($this->optionalForms as $name => $form) {
+      $i = 1;
+      if (strpos($name, '/') === false)
+      {
+        // The form must be added to the main form
+        while (array_key_exists($name . $i, $taintedValues))
+        {
+          $this->embedForm($name . $i, clone $form);
+          $i++;
+        }
+      }
+      else
+      {
+        // The form must be added to an embedded form
+        list($parent, $name) = explode('/', $name);
+        if (!isset($taintedValues[$parent]))
+        {
+          continue;
+        }
+        $taintedValuesCopy = $taintedValues[$parent];
+        $target = $this->embeddedForms[$parent];
+        while (array_key_exists($name . $i, $taintedValuesCopy))
+        {
+          $target->embedForm($name . $i, clone $form);
+          $i++;
+          // the parent form schema is not updated when updating an embedded form
+          // so we must embed it again
+          $this->embedForm($parent, $target);
+        }
+      }
+    }
+  }
+  
   /**
    * @see sfFormObject
    */
@@ -360,7 +389,19 @@ abstract class sfFormPropel extends sfFormObject
    */
   public function mergeRelation($relationName, $options = array())
   {
+    $options = array_merge(array(
+      'add_empty'           => false,
+    ), $options);
+    
     $relationForm = $this->getRelationForm($relationName, $options);
+
+    if ($options['add_empty'])
+    {
+      $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
+      $emptyName = 'new' . $relationName;
+      $relationForm->embedOptionalForm($emptyName, $emptyForm);
+      $this->optionalForms[$emptyName] = $emptyForm;
+    }
     
     $this->mergeForm($relationForm);
   }
@@ -369,10 +410,19 @@ abstract class sfFormPropel extends sfFormObject
   {
     $options = array_merge(array(
       'title'               => $relationName,
-      'decorator'           => null
+      'decorator'           => null,
+      'add_empty'           => false,
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
+    
+    if ($options['add_empty'])
+    {
+      $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
+      $emptyName = 'new' . $relationName;
+      $relationForm->embedOptionalForm($emptyName, $emptyForm);
+      $this->optionalForms[$options['title']. '/' . $emptyName] = $emptyForm;
+    }
     
     $this->embedForm($options['title'], $relationForm, $options['decorator']);
   }
@@ -383,8 +433,6 @@ abstract class sfFormPropel extends sfFormObject
       'collection_form_class' => 'sfFormPropelCollection',
       'embedded_form_class'   => null,
       'item_pattern'          => '%index%',
-      'add_empty'             => false,
-      'empty_label'           => null,
       'hide_on_new'           => false,
     ), $options);
     
@@ -394,22 +442,17 @@ abstract class sfFormPropel extends sfFormObject
     }
     
     // compute relation elements
-    $tableMap = call_user_func(array($this->getPeer(), 'getTableMap'));
-    $relationMap = $tableMap->getRelation($relationName);
+    $relationMap = $this->getRelationMap($relationName);
     if ($relationMap->getType() != RelationMap::ONE_TO_MANY)
     {
       throw new sfException('embedRelation() only works for one-to-many relationships');
     }
+
     $collection = call_user_func(array($this->getObject(), sprintf('get%ss', $relationName)));
-    $relatedPeer = $relationMap->getRightTable()->getPeerClassname();
     
     // compute relation fields, to be removed from embedded forms
     // because this data is not editable
-    $relationFields = array();
-    foreach ($relationMap->getColumnMappings(RelationMap::LEFT_TO_RIGHT) as $leftCol => $rightCol)
-    {
-      $relationFields[$leftCol]= call_user_func(array($relatedPeer, 'translateFieldName'), $rightCol, BasePeer::TYPE_COLNAME, BasePeer::TYPE_FIELDNAME);
-    }
+    $relationFields = $this->getRelationFields($relationMap);
     
     // create the relation form
     $collectionFormClass = $options['collection_form_class'];
@@ -419,26 +462,56 @@ abstract class sfFormPropel extends sfFormObject
       'remove_fields'       => $relationFields,
     ));
     
-    // add empty form for addition
-    if ($options['add_empty'])
+    return $collectionForm;
+  }
+
+  public function getEmptyRelatedForm($relationName, $options = array())
+  {
+    $options = array_merge(array(
+      'embedded_form_class'   => null,
+      'empty_label'           => null,
+    ), $options);
+    
+    // compute relation elements
+    $relationMap = $this->getRelationMap($relationName);
+    if ($relationMap->getType() != RelationMap::ONE_TO_MANY)
     {
-      $relatedClass = $relationMap->getRightTable()->getClassname();
-      $formClass = $collectionForm->getFormClass();
-      $emptyForm = new $formClass(new $relatedClass());
-      if ($label = $options['empty_label']) {
-        $emptyForm->getWidgetSchema()->setLabel($label);
-      }
-      foreach ($relationFields as $leftCol => $field)
-      {
-        unset($emptyForm[$field]);
-        $emptyForm->setFixedValue($field, $this->getObject()->getByName($leftCol, BasePeer::TYPE_COLNAME));
-      }
-      $emptyName = 'new' . $relationMap->getName();
-      $collectionForm->embedOptionalForm($emptyName, $emptyForm);
-      $this->optionalForms[$emptyName] = $emptyForm;
+      throw new sfException('getEmptyRelatedForm() only works for one-to-many relationships');
     }
     
-    return $collectionForm;
+    $relatedClass = $relationMap->getRightTable()->getClassname();
+    if (!$formClass = $options['embedded_form_class'])
+    {
+      $formClass = $relatedClass . 'Form';
+    }
+    $emptyForm = new $formClass(new $relatedClass());
+    if ($label = $options['empty_label']) {
+      $emptyForm->getWidgetSchema()->setLabel($label);
+    }
+    foreach ($this->getRelationFields($relationMap) as $leftCol => $field)
+    {
+      unset($emptyForm[$field]);
+      $emptyForm->setFixedValue($field, $this->getObject()->getByName($leftCol, BasePeer::TYPE_COLNAME));
+    }
+    
+    return $emptyForm;
+  }
+  
+  protected function getRelationMap($relationName)
+  {
+    $tableMap = call_user_func(array($this->getPeer(), 'getTableMap'));
+    return $tableMap->getRelation($relationName);
+  }
+  
+  protected function getRelationFields($relationMap)
+  {
+    $relatedPeer = $relationMap->getRightTable()->getPeerClassname();
+    $relationFields = array();
+    foreach ($relationMap->getColumnMappings(RelationMap::LEFT_TO_RIGHT) as $leftCol => $rightCol)
+    {
+      $relationFields[$leftCol]= call_user_func(array($relatedPeer, 'translateFieldName'), $rightCol, BasePeer::TYPE_COLNAME, BasePeer::TYPE_FIELDNAME);
+    }
+    return $relationFields;
   }
   
   public function setFixedValues($values)
