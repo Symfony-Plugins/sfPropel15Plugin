@@ -20,8 +20,23 @@
  */
 abstract class sfFormPropel extends sfFormObject
 {
+  /**
+   * List of fields that cannot be changed by the user, but still take a default value
+   * @var array
+   */
   protected $fixedValues = array();
+  
+  /**
+   * List of forms that can be added by the user
+   * @var array[sfForm]
+   */
   protected $optionalForms = array();
+  
+  /**
+   * Name of the field used for deletion.
+   * @var string
+   */
+  protected $deleteField;
   
   /**
    * Constructor.
@@ -143,16 +158,113 @@ abstract class sfFormPropel extends sfFormObject
       }
     }
   }
+
+  /**
+   * Adds a widget to the form, and declare this widget as the delete control.
+   * If the bound widget value is true, then the related object will be deleted
+   *
+   * @param string       $name   The field name
+   * @param sfWidgetForm $widget The widget
+   *
+   * @return sfPropelForm The current form instance
+   */
+  public function setDeleteWidget($name, $widget)
+  {
+    $this->setWidget($name, $widget);
+    $this->setValidator($name, new sfValidatorPass(array('required' => false)));
+    $this->setDeleteField($name);   
+    
+    return $this;
+  }
   
   /**
+   * Updates and saves the current object.
    * @see sfFormObject
+   *
+   * If you want to add some logic before saving or save other associated
+   * objects, this is the method to override.
+   *
+   * @param mixed $con An optional connection object
+   */
+  protected function doSave($con = null)
+  {
+    if (null === $con)
+    {
+      $con = $this->getConnection();
+    }
+
+    $this->updateObject();
+    
+    // this is Propel specific
+    if(!$this->getObject()->isDeleted())
+    {
+      $this->getObject()->save($con);
+    }
+
+    // embedded forms
+    $this->saveEmbeddedForms($con);
+  }
+  
+  /**
+   * Updates the values of the object with the cleaned up values.
+   *
+   * If you want to add some logic before updating or update other associated
+   * objects, this is the method to override.
+   * @see sfFormObject
+   *
+   * @param array $values An array of values
    */
   protected function doUpdateObject($values)
   {
+    if ($this->hasDeleteField())
+    {
+      if (isset($values[$this->getDeleteField()]) && $values[$this->getDeleteField()])
+      {
+        $this->getObject()->delete();
+        return;
+      }
+    }
     $values = array_merge($values, $this->getFixedValues());
     $this->getObject()->fromArray($values, BasePeer::TYPE_FIELDNAME);
   }
 
+  /**
+   * Saves embedded form objects.
+   * @see sfFormObject
+   *
+   * @param mixed $con   An optional connection object
+   * @param array $forms An array of forms
+   */
+  public function saveEmbeddedForms($con = null, $forms = null)
+  {
+    if (null === $con)
+    {
+      $con = $this->getConnection();
+    }
+
+    if (null === $forms)
+    {
+      $forms = $this->embeddedForms;
+    }
+
+    foreach ($forms as $form)
+    {
+      if ($form instanceof sfFormObject)
+      {
+        $form->saveEmbeddedForms($con);
+        // this is Propel specific
+        if(!$form->getObject()->isDeleted())
+        {
+          $form->getObject()->save($con);
+        }
+      }
+      else
+      {
+        $this->saveEmbeddedForms($con, $form->getEmbeddedForms());
+      }
+    }
+  }
+  
   /**
    * Processes cleaned up values with user defined methods.
    *
@@ -322,6 +434,11 @@ abstract class sfFormPropel extends sfFormObject
     }
   }
   
+  /**
+   * Get the name of the Peer class of the form's model, e.g. 'AuthorPeer'
+   *
+   * @return string A Peer class name
+   */
   public function getPeer()
   {
     return constant(get_class($this->getObject()).'::PEER');
@@ -371,7 +488,7 @@ abstract class sfFormPropel extends sfFormObject
   
   /**
    * Overrides sfForm::mergeForm() to also merge embedded forms
-   * Allows autosave of marged collections
+   * Allows autosave of merged collections
    *
    * @param  sfForm   $form      The sfForm instance to merge with current form
    *
@@ -387,18 +504,27 @@ abstract class sfFormPropel extends sfFormObject
   }
   
   /**
-   * Merge Relation form into this form
+   * Merge a Collection form based on a Relation into this form.
+   * Available options:
+   *  - add_empty: Whether to allow the user to add new objects to the collection. Defaults to true
+   * Additional options are passed to sfFromPropel::getRelationForm()
+   *
+   * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
+   * @param array  $options      An array of options
+   *
+   * @return sfPropelForm        The current form instance
    */
   public function mergeRelation($relationName, $options = array())
   {
     $options = array_merge(array(
-      'add_empty'           => false,
+      'add_empty'           => true,
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
 
     if ($options['add_empty'])
     {
+      unset($options['add_empty']);
       $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
       $emptyName = 'new' . $relationName;
       $relationForm->embedOptionalForm($emptyName, $emptyForm);
@@ -406,20 +532,36 @@ abstract class sfFormPropel extends sfFormObject
     }
     
     $this->mergeForm($relationForm);
+    
+    return $this;
   }
-  
+
+  /**
+   * Embed a Collection form based on a Relation into this form.
+   * Available options:
+   *  - title: The title of the colleciton form once embedded. Defaults to the relation name.
+   *  - decorator: The decorator for the sfWidgetFormSchemaDecorator
+   *  - add_empty: Whether to allow the user to add new objects to the collection. Defaults to true
+   * Additional options are passed to sfFromPropel::getRelationForm()
+   *
+   * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
+   * @param array  $options      An array of options
+   *
+   * @return sfPropelForm        The current form instance
+   */
   public function embedRelation($relationName, $options = array())
   {
     $options = array_merge(array(
       'title'               => $relationName,
       'decorator'           => null,
-      'add_empty'           => false,
+      'add_empty'           => true,
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
     
     if ($options['add_empty'])
     {
+      unset($options['add_empty']);
       $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
       $emptyName = 'new' . $relationName;
       $relationForm->embedOptionalForm($emptyName, $emptyForm);
@@ -427,21 +569,34 @@ abstract class sfFormPropel extends sfFormObject
     }
     
     $this->embedForm($options['title'], $relationForm, $options['decorator']);
+    
+    return $this;
   }
   
+  /**
+   * Get a Collection form based on a Relation of the current form's model.
+   * Available options:
+   *  - hide_on_new: If true, returns null for new objects. Defaults to false.
+   *  - collection_form_class: class of the collection form to return. Defaults to sfFormPropelCollection.
+   * Additional options are passed to sfFormPropelCollection::__construct()
+   *
+   * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
+   * @param array  $options      An array of options
+   *
+   * @return sfFormPropelCollection A form collection instance
+   */
   public function getRelationForm($relationName, $options = array())
   {
     $options = array_merge(array(
-      'collection_form_class' => 'sfFormPropelCollection',
-      'embedded_form_class'   => null,
-      'item_pattern'          => '%index%',
       'hide_on_new'           => false,
+      'collection_form_class' => 'sfFormPropelCollection',
     ), $options);
     
     if ($this->getObject()->isNew() && $options['hide_on_new'])
     {
       return;
     }
+    unset($options['hide_on_new']);
     
     // compute relation elements
     $relationMap = $this->getRelationMap($relationName);
@@ -458,20 +613,29 @@ abstract class sfFormPropel extends sfFormObject
     
     // create the relation form
     $collectionFormClass = $options['collection_form_class'];
-    $collectionForm = new $collectionFormClass($collection, array(
-      'embedded_form_class' => $options['embedded_form_class'],
-      'item_pattern'        => $options['item_pattern'],
-      'remove_fields'       => $relationFields,
-    ));
+    unset($options['collection_form_class']);
+    
+    $collectionForm = new $collectionFormClass($collection, $options);
     
     return $collectionForm;
   }
 
+  /**
+   * Get an empty Propel form based on a Relation of the current form's model.
+   * Available options:
+   *  - embedded_form_class: The class of the form to return
+   *  - empty_label: The label of the empty form
+   *
+   * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
+   * @param array  $options      An array of options
+   *
+   * @return sfFormPropel A Propel form instance
+   */
   public function getEmptyRelatedForm($relationName, $options = array())
   {
     $options = array_merge(array(
-      'embedded_form_class'   => null,
-      'empty_label'           => null,
+      'embedded_form_class' => null,
+      'empty_label'         => null,
     ), $options);
     
     // compute relation elements
@@ -529,6 +693,21 @@ abstract class sfFormPropel extends sfFormObject
   public function getFixedValues()
   {
     return $this->fixedValues;
+  }
+  
+  public function setDeleteField($fieldName)
+  {
+    $this->deleteField = $fieldName;
+  }
+
+  public function hasDeleteField()
+  {
+    return null !== $this->deleteField;
+  }
+  
+  public function getDeleteField()
+  {
+    return $this->deleteField;
   }
 
   public function __clone()
