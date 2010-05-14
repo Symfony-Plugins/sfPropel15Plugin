@@ -50,7 +50,7 @@ class sfWidgetFormDelete extends sfWidgetFormInputCheckbox
     }
     else
     {
-      $this->setAttribute('onclick', $hideParentCode));
+      $this->setAttribute('onclick', $hideParentCode);
     }
   }
 
