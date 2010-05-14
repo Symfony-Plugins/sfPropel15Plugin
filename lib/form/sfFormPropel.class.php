@@ -117,6 +117,7 @@ abstract class sfFormPropel extends sfFormObject
         while (array_key_exists($name . $i, $taintedValues))
         {
           $this->embedForm($name . $i, clone $form);
+          $this->getWidgetSchema()->moveField($name . $i, sfWidgetFormSchema::BEFORE, $name);
           $i++;
         }
       }
@@ -133,6 +134,7 @@ abstract class sfFormPropel extends sfFormObject
         while (array_key_exists($name . $i, $taintedValuesCopy))
         {
           $target->embedForm($name . $i, clone $form);
+          $target->getWidgetSchema()->moveField($name . $i, sfWidgetFormSchema::BEFORE, $name);
           $i++;
           // the parent form schema is not updated when updating an embedded form
           // so we must embed it again
