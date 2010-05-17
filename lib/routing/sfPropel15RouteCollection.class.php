@@ -28,11 +28,9 @@ class sfPropel15RouteCollection extends sfObjectRouteCollection
    */
   public function __construct(array $options)
   {
-    $this->options = array_merge(array(
-      'query_methods'        => array(),
-    ), $this->options);
-    
-    $this->options['query_methods'] = array_merge(array('list' => null, 'object' => null), $this->options['query_methods']);
+    $options = array_merge(array(
+      'query_methods'        => array('list' => null, 'object' => null),
+    ), $options);
 
     parent::__construct($options);
   }
