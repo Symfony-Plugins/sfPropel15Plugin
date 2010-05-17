@@ -106,9 +106,8 @@ class sfPropel15Route extends sfRequestRoute
     }
 
     // check the related object
-    $this->object = $this->getQuery()
-      ->filterByArray($this->getModelParameters($this->parameters))
-      ->findOne();
+    $this->object = $this->getQuery()->findOne();
+    
     if (!$this->object && (!isset($this->options['allow_empty']) || !$this->options['allow_empty']))
     {
       throw new sfError404Exception(sprintf('Unable to find the %s object with the following parameters "%s").', $this->options['model'], str_replace("\n", '', var_export($this->filterParameters($this->parameters), true))));
@@ -141,9 +140,7 @@ class sfPropel15Route extends sfRequestRoute
       return $this->objects;
     }
 
-		$this->object = $this->getQuery()
-		  ->filterByArray($this->getModelParameters($this->parameters))
-		  ->find();
+    $this->objects = $this->getQuery()->find();
 
     if (!count($this->objects) && isset($this->options['allow_empty']) && !$this->options['allow_empty'])
     {
@@ -152,10 +149,18 @@ class sfPropel15Route extends sfRequestRoute
 
     return $this->objects;
   }
-	
+  
   protected function getQuery()
   {
-  	return PropelQuery::from($this->options['model']);
+    $query = PropelQuery::from($this->options['model']);
+    if (isset($this->options['query_methods']))
+    {
+      foreach ($this->options['query_methods'] as $methodName) {
+        $query->$methodName();
+      }
+    }
+    $query->filterByArray($this->getModelParameters($this->parameters));
+    return $query;
   }
   
   protected function getModelParameters($parameters)
@@ -165,7 +170,7 @@ class sfPropel15Route extends sfRequestRoute
       return $parameters;
     }
     $parameters = $this->filterParameters($parameters);
-		$peerName = constant($this->options['model'] . '::PEER');
+    $peerName = constant($this->options['model'] . '::PEER');
     $params = array();
     foreach ($this->getRealVariables() as $variable)
     {
