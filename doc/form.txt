@@ -8,6 +8,8 @@ The `sfPropel15Plugin` provides two widgets and three validators, to help build 
 
 Editing a foreign key columns is often a matter of choosing the related object to relate. For instance, editing the `author_id` field of an `Article` model means choosing an element in the list of existing Authors. `sfPropel15Plugin` provides an extension of the `sfWidgetFormChoice` class that takes care of populating the list of options based on a related table. It is called `sfWidgetPropelChoice`, and is associated witha validator called `sfValidatorPropelChoice`.
 
+### Generated Configuration
+
 Most of the time, the configuration of this widget and validator is already done in the generated forms and filter forms. Using the previous example model, Propel would generate the following Base form:
 
     [php]
@@ -19,19 +21,44 @@ Most of the time, the configuration of this widget and validator is already done
     
         $this->setWidgets(array(
           // ...
-          'author_id' => new sfWidgetFormPropelChoice(array('model' => 'Author', 'add_empty' => true)),
+          'author_id' => new sfWidgetFormPropelChoice(array(
+            'model' => 'Author',
+            'add_empty' => true)
+          ),
         ));
     
         $this->setValidators(array(
           // ...
-          'author_id' => new sfValidatorPropelChoice(array('model' => 'Author', 'column' => 'id', 'required' => false)),
+          'author_id' => new sfValidatorPropelChoice(array(
+            'model' => 'Author',
+            'column' => 'id',
+            'required' => false)
+          ),
         ));
       }
     }
 
 Based on the `model` setting, the plugin generates the list of possible choices for the widget and the validator.
 
-You can filter the list of authors using any of the methods available in the `AuthorQuery` class. If you need to display only the list of active authors, customize the form as follows:
+### Additional Query Methods
+
+You can set the widget to execute additional query methods on the related Model Query object. For instance, if a `Section` model uses the `nested_set` behavior, you probably want to display a section selection widget in hierarchical order. This is easily achived by executing the `SectionQuery::orderByBranch()` query method, and you can register it as follows:
+
+    [php]
+    class ContentForm extends BaseContentForm
+    {
+      public function configure()
+      {
+        $this->widgetSchema['section'] = new sfWidgetFormPropelChoice(array(
+          'model'         => 'Section',
+          'query_methods' => array('orderByBranch')
+          'add_empty'     => true,
+        ));
+      }
+    }
+
+
+You can also enable the `query_method` option on an existing widget. For instance, to display only the list of active authors, customize the form as follows:
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -50,6 +77,22 @@ You can filter the list of authors using any of the methods available in the `Au
       }
     }
 
+Of course, to allow the validation of the user's choice, the `query_methods` option is also available in the `sfValidatorPropelChoice` validator. Always remember to apply the same filters in the validator as in the widget.
+
+So if you display a selection of items using a query method, you can validate this selection, too:
+
+   [php]
+   class ContentForm extends BaseContentForm
+   {
+     public function configure()
+     {
+       $this->widgetSchema['section']->setOption('query_methods', array('published'));
+       $this->validatorSchema['section']->setOption('query_methods', array('published'));
+     }
+   }
+
+### Using A Custom Query Object
+
 Alternatively, build the query yourself in the form, and pass it to the widget in the `criteria` option:
 
     [php]
@@ -62,7 +105,9 @@ Alternatively, build the query yourself in the form, and pass it to the widget i
       }
     }
 
-Of course, to allow the validation of the user's choice, both the `query_methods` and `criteria` options are also available in the `sfValidatorPropelChoice`. Always remember to apply the same filters in the validator as inthe widget.
+The `criteria` option is also available in `sfValidatorPropelChoice`.
+
+### Full Options List
 
 The `sfWidgetFormPropelChoice` widget supports the following options:
 
@@ -102,7 +147,9 @@ In a blog application, two articles can not have the same slug; to ensure this c
         // ...
      
         $this->validatorSchema->setPostValidator(
-          new sfValidatorPropelUnique(array('model' => 'Article', 'column' => array('slug')))
+          new sfValidatorPropelUnique(array(
+            'model' => 'Article',
+            'column' => array('slug')))
         );
       }
     }

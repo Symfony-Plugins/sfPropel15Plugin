@@ -107,66 +107,17 @@ The plugin comes bundled with a new admin generator theme named 'admin15'. This 
 ### Filter and Edit forms enhancement
 
 - **YAML widget customization**: The `generator.yml` format was extended to allow widget and validator customization directly in YAML, without the need to edit a form object. You can also safely omit a field from a `display` list in a form definition, without any risk to loose data.
-- **Plain text widget**: If you want to display some data in a form without allowing the user to edit it, use the `type: plain` attribute, just like in the old days of symfony 1.2. This is very useful for columns managed by the model, like `created_at` and `updated_at` columns.
+- **Plain text field**: If you want to display some data in a form without allowing the user to edit it, use the `type: plain` attribute, just like in the old days of symfony 1.2. This is very useful for columns managed by the model, like `created_at` and `updated_at` columns.
 
 The new options for the `admin15` generator theme are fully documented, and illustrated by real life examples, in the [`doc/admin_generator.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/admin_generator.txt) file in this plugin source code.
 
 Form Subframework Modifications
 -------------------------------
 
-### Updated `sfWidgetFormPropelChoice` widget
-
-The `sfWidgetFormPropelChoice` widget now uses the new Query API. You can customize the list of choices more easily by executing custom query methods, using the new `query_methods` option. For instance, if the `Section` model uses the `nested_set` behavior, you probably want to display a section selection widget in hierarchical order. This is easily achived by execiting the `orderByBranch()` query method, and you can register it as follows:
-
-    [php]
-    class ContentForm extends BaseContentForm
-    {
-      public function configure()
-      {
-        $this->widgetSchema['section'] = new sfWidgetFormPropelChoice(array(
-          'model'         => 'Section',
-          'query_methods' => array('orderByBranch')
-          'add_empty'     => true,
-        ));
-      }
-    }
-
-In practice, you won't need to build a custom Criteria object to achieve a custom list choice - but it still works:
-
-    [php]
-    class ContentForm extends BaseContentForm
-    {
-      public function configure()
-      {
-        $query = SectionQuery::create()
-          ->filterByIsVisible(true);
-        $this->widgetSchema['section'] = new sfWidgetFormPropelChoice(array(
-          'model'     => 'Section',
-          'criteria'  => $query,
-          'add_empty' => true,
-        ));
-      }
-    }
-
-### Updated Propel validators
-
-Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were updated to use the new PropelQuery objects, and to accept a `query_methods` option similat to the one of `sfWidgetFormPropelChoice`. So if you display a selection of items using a query method, you can validate this selection, too:
-
-    [php]
-    class ContentForm extends BaseContentForm
-    {
-      public function configure()
-      {
-        $this->widgetSchema['section']->setOption('query_methods', array('published'));
-        $this->validatorSchema['section']->setOption('query_methods', array('published'));
-      }
-    }
-
-The two widgets and the validator are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/form.txt) file in this plugin source code.
-
-### Easy Relation Embed
-
-Editing related objects together with the main objects (e.g., editing Comments in a Post form) is a piece of cake. The new `sfFormPropel::embedRelation()` method does all the work to fetch related objects, build the forms for each of them, and embed the related object forms into the main form. Embdeded relation forms allow to **edit**, **add**, and **delete** a related objects with no additional code.
+- **Updated `sfWidgetFormPropelChoice` widget**: The widget now uses the new Query API. You can customize the list of choices more easily by executing custom query methods, using the new `query_methods` option. 
+- **Updated Propel validators**: Both the `sfValidatorPropelChoice` and the `sfValidatorPropelUnique` were updated to use the new PropelQuery objects, and to accept a `query_methods` option similar to the one of `sfWidgetFormPropelChoice`.
+- **Plain text widget and validator**: This new widget allows a field to be displayed in a form, without letting the use change it.
+- **Easy Relation Embed**: Editing related objects together with the main objects (e.g., editing `Comments` in a `Post` form) is a piece of cake. The new `sfFormPropel::embedRelation()` method does all the work to fetch related objects, build the forms for each of them, and embed the related object forms into the main form. Embdeded relation forms allow to **edit**, **add**, and **delete** a related objects with no additional code.
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -176,3 +127,10 @@ Editing related objects together with the main objects (e.g., editing Comments i
         $this->embedRelation('Book');
       }
     }
+
+The Propel widgets, validators, and form classes are fully documented in the [`doc/form.txt`](http://trac.symfony-project.org/browser/plugins/sfPropel15Plugin/trunk/doc/form.txt) file in this plugin source code.
+
+Routing Modifications
+---------------------
+
+The plugin offer two new routing classes, `sfPropel15Route` and `sfPropel15RouteCollection`. These classes are used by default in the models build with the propel admin generator. They behave just like the previous `sfPropelRoute` class.
