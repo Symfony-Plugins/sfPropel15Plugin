@@ -38,6 +38,10 @@ Change the path of the symfony behaviors in the `config/propel.ini` file of your
     propel.behavior.symfony_behaviors.class        = plugins.sfPropel15Plugin.lib.behavior.SfPropelBehaviorSymfonyBehaviors
     propel.behavior.symfony_timestampable.class    = plugins.sfPropel15Plugin.lib.behavior.SfPropelBehaviorTimestampable
 
+(Re)Build the model:
+
+    > ./symfony propel:build --all-classes
+
 What's New In Propel 1.5
 ------------------------
 
