@@ -545,6 +545,7 @@ abstract class sfFormPropel extends sfFormObject
    *  - decorator: The decorator for the sfWidgetFormSchemaDecorator
    *  - add_empty: Whether to allow the user to add new objects to the collection. Defaults to true
    * Additional options are passed to sfFromPropel::getRelationForm()
+   *  - empty_label: The label of the empty form
    *
    * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
    * @param array  $options      An array of options
@@ -557,15 +558,16 @@ abstract class sfFormPropel extends sfFormObject
       'title'               => $relationName,
       'decorator'           => null,
       'add_empty'           => true,
+      'empty_label'         => null,
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
     
     if ($options['add_empty'])
     {
-      unset($options['add_empty']);
+      $emptyName = $options['empty_label'] ? $options['empty_label'] : 'new' . $relationName;
+      unset($options['add_empty'], $options['empty_label']);
       $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
-      $emptyName = 'new' . $relationName;
       $relationForm->embedOptionalForm($emptyName, $emptyForm);
       $this->optionalForms[$options['title']. '/' . $emptyName] = $emptyForm;
     }
