@@ -781,42 +781,56 @@ class sfPropelDatabaseSchema
     {
       foreach ($column as $key => $value)
       {
-        if (!in_array($key, array('foreignClass', 'foreignTable', 'foreignReference', 'fkPhpName', 'fkRefPhpName', 'onDelete', 'onUpdate', 'index', 'unique', 'sequence', 'inheritance')))
+        if (!in_array($key, array('foreignClass', 'foreignTable', 'foreignReference', 'fkPhpName', 'fkRefPhpName', 'onDelete', 'onUpdate', 'index', 'unique', 'sequence', 'inheritance', 'vendor')))
         {
           $attributes_string .= " $key=\"".htmlspecialchars($this->getCorrectValueFor($key, $value), ENT_QUOTES, sfConfig::get('sf_charset'))."\"";
         }
       }
-      if (isset($column['inheritance']))
+      if (!isset($column['inheritance']) && !isset($column['vendor']))
       {
-        $attributes_string .= ' inheritance="single">'."\n";
-
-        $extended_package = isset($this->database[$tb_name]['_attributes']['package']) ? $this->database[$tb_name]['_attributes']['package'] : $this->database['_attributes']['package'];
-        $extended_class   = isset($this->database[$tb_name]['_attributes']['phpName']) ? $this->database[$tb_name]['_attributes']['phpName'] : sfInflector::camelize($tb_name);
-
-        foreach ($column['inheritance'] as $key => $class)
-        {
-          // each inheritance class can have its own package
-          $package = null;
-          if (is_array($class))
-          {
-            $package = isset($class['package']) ? $class['package'] : null;
-            $class   = $class['phpName'];
-          }
-
-          $attributes_string .= vsprintf('      <inheritance extends="%s.%s" key="%s" class="%s"%s />', array(
-            $extended_package,
-            $extended_class,
-            $key,
-            $class,
-            $package ? " package=\"$package\"" : '',
-          ))."\n";
-        }
-
-        $attributes_string .= '    </column>'."\n";
+        $attributes_string .= " />\n";
       }
       else
       {
-        $attributes_string .= " />\n";
+        if (isset($column['inheritance']))
+        {
+          $attributes_string .= ' inheritance="single">'."\n";
+          $extended_package = isset($this->database[$tb_name]['_attributes']['package']) ? $this->database[$tb_name]['_attributes']['package'] : $this->database['_attributes']['package'];
+          $extended_class   = isset($this->database[$tb_name]['_attributes']['phpName']) ? $this->database[$tb_name]['_attributes']['phpName'] : sfInflector::camelize($tb_name);
+
+          foreach ($column['inheritance'] as $key => $class)
+          {
+            // each inheritance class can have its own package
+            $package = null;
+            if (is_array($class))
+            {
+              $package = isset($class['package']) ? $class['package'] : null;
+              $class   = $class['phpName'];
+            }
+
+            $attributes_string .= vsprintf('      <inheritance extends="%s.%s" key="%s" class="%s"%s />', array(
+              $extended_package,
+              $extended_class,
+              $key,
+              $class,
+              $package ? " package=\"$package\"" : '',
+            ))."\n";
+          }
+        }
+        if (isset($column['vendor']))
+        {
+          if (!isset($column['inheritance']))
+          {
+            $attributes_string .= '>'."\n";
+          }
+          $attributes_string .= '      <vendor type="mysql">'."\n";
+          foreach ($column['vendor'] as $key => $class)
+          {
+            $attributes_string .= vsprintf('        <parameter name="%s" value="%s" />', array($key, $class))."\n";
+          }
+          $attributes_string .= '      </vendor>'."\n";
+        }
+        $attributes_string .= '    </column>'."\n";
       }
     }
     else
