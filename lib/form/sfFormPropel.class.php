@@ -520,6 +520,7 @@ abstract class sfFormPropel extends sfFormObject
   {
     $options = array_merge(array(
       'add_empty'           => true,
+      'item_pattern'        => '%model%%index%',
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
