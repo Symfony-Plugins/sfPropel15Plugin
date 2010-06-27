@@ -615,7 +615,9 @@ abstract class sfFormPropel extends sfFormObject
     
     // compute relation fields, to be removed from embedded forms
     // because this data is not editable
-    $options['remove_fields'] = $this->getRelationFields($relationMap);
+    if (!isset($options['remove_fields'])) {
+      $options['remove_fields'] = $this->getRelationFields($relationMap);
+    }
     
     // create the relation form
     $collectionFormClass = $options['collection_form_class'];
