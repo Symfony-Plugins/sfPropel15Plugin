@@ -240,10 +240,15 @@ Now the Article form displays the list of related books for each author, togethe
 * `collection_form_class`: Class of the collection form to return. Defaults to sfFormPropelCollection.
 * `hide_on_new`: If true, the relation form does not appear for new objects. Defaults to false.
 * `add_empty`: Whether to allow the user to add new objects to the collection. Defaults to true.
-* `empty_label`: The label of the empty form. Defaults to 'new' + the relation name.
 * `add_delete`: Whether to add a delete widget for each object. Defaults to true.
 * `remove_fields`: The list of fields to remove from the embedded object forms
 * `item_pattern`: The pattern used to name each embedded form. Defaults to '%index%'.
+
+If `add_empty` is set to `true`, the following additional options are available:
+
+* `empty_label`: The label of the empty form. Defaults to 'new' + the relation name.
+* `add_link`: The text of the JavaScript link that displays the empty form. Defaults to `Ann new`
+* `max_additions`: The max number of additions accepted on the client side. Defaults to 0 (no limit)
 
 If `add_delete` is set to `true`, the following additional options are available:
 

@@ -162,8 +162,9 @@ class sfFormPropelCollection extends sfForm
    * @param string $name       The field name
    * @param sfForm $form       A sfForm instance
    * @param string $decorator  A HTML decorator for the embedded form
+   * @param array  $options    An array of options passed to the sfWidgetFormSchemaOptional
    */
-  public function embedOptionalForm($name, sfForm $form, $decorator = null)
+  public function embedOptionalForm($name, sfForm $form, $decorator = null, $options = array())
   {
     $name = (string) $name;
     if (true === $this->isBound() || true === $form->isBound())
@@ -180,7 +181,7 @@ class sfFormPropelCollection extends sfForm
     
     $decorator = null === $decorator ? $widgetSchema->getFormFormatter()->getDecoratorFormat() : $decorator;
 
-    $this->widgetSchema[$name] = new sfWidgetFormSchemaOptional($widgetSchema, $decorator);
+    $this->widgetSchema[$name] = new sfWidgetFormSchemaOptional($widgetSchema, $decorator, $options);
     
     $this->validatorSchema[$name] = new sfValidatorPass();
 

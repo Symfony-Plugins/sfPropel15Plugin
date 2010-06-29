@@ -525,14 +525,7 @@ abstract class sfFormPropel extends sfFormObject
     
     $relationForm = $this->getRelationForm($relationName, $options);
 
-    if ($options['add_empty'])
-    {
-      unset($options['add_empty']);
-      $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
-      $emptyName = 'new' . $relationName;
-      $relationForm->embedOptionalForm($emptyName, $emptyForm);
-      $this->optionalForms[$emptyName] = $emptyForm;
-    }
+    $this->addEmptyRelationForm($relationName, $relationForm, 'new' . $relationName, '', $options);
     
     $this->mergeForm($relationForm);
     
@@ -559,19 +552,13 @@ abstract class sfFormPropel extends sfFormObject
       'title'               => $relationName,
       'decorator'           => null,
       'add_empty'           => true,
+      'max_additions'       => 0,
       'empty_label'         => null,
     ), $options);
     
     $relationForm = $this->getRelationForm($relationName, $options);
     
-    if ($options['add_empty'])
-    {
-      $emptyName = $options['empty_label'] ? $options['empty_label'] : 'new' . $relationName;
-      unset($options['add_empty'], $options['empty_label']);
-      $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
-      $relationForm->embedOptionalForm($emptyName, $emptyForm);
-      $this->optionalForms[$options['title']. '/' . $emptyName] = $emptyForm;
-    }
+    $this->addEmptyRelationForm($relationName, $relationForm, $options['empty_label'] ? $options['empty_label'] : 'new' . $relationName, $options['title']. '/', $options);
     
     $this->embedForm($options['title'], $relationForm, $options['decorator']);
     
@@ -628,6 +615,43 @@ abstract class sfFormPropel extends sfFormObject
     return $collectionForm;
   }
 
+  /**
+   * Adds an empty Propel form based on a Relation of the current form's model to a collection form.
+   * Available options:
+   *  - add_empty: Whether to allow the user to add new objects to the collection. Defaults to true
+   *  - max_additions: The maximum number of related objects that can be added. Defaults to 0 (no limit)
+   *  - add_link: Text of the JS link that triggers the addition of the empty form. Defaults to 'Add new'
+   *
+   * @param string $relationName The name of a relation of the current Model, e.g. 'Book'
+   * @param sfFormPropelCollection $relationForm The form to augment
+   * @param string $emptyName    The name of the empty form to add
+   * @param string $prefix       The prefix to ad to the empty name to form the key to the optional forms array
+   * @param array  $options      An array of options
+   */
+  protected function addEmptyRelationForm($relationName, $relationForm, $emptyName, $prefix, $options = array())
+  {
+    $options = array_merge(array(
+      'add_empty'           => true,
+      'max_additions'       => 0,
+      'add_link'            => 'Add new',
+    ), $options);
+    
+    $count = $relationForm->getCollection()->count();
+    if (!$options['add_empty'] || 
+       ($options['max_additions'] > 0 && $options['max_additions'] <= $count))
+    {
+      return;
+    }
+    unset($options['add_empty']);
+    if ($options['max_additions'])
+    {
+      $options['max_additions'] = $options['max_additions'] - $count;
+    }
+    $emptyForm = $this->getEmptyRelatedForm($relationName, $options);
+    $relationForm->embedOptionalForm($emptyName, $emptyForm, null, $options);
+    $this->optionalForms[$prefix . $emptyName] = $emptyForm;
+  }
+  
   /**
    * Get an empty Propel form based on a Relation of the current form's model.
    * Available options:
