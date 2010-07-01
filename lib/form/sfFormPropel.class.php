@@ -696,10 +696,15 @@ abstract class sfFormPropel extends sfFormObject
       $formClass = $relatedClass . 'Form';
     }
     $emptyForm = new $formClass($relatedObject);
-    if ($label = $options['empty_label']) {
+    if ($label = $options['empty_label'])
+    {
       $emptyForm->getWidgetSchema()->setLabel($label);
     }
-    foreach ($this->getRelationFields($relationMap) as $leftCol => $field)
+    if (!isset($options['remove_fields']))
+    {
+      $options['remove_fields'] = $this->getRelationFields($relationMap);
+    }
+    foreach ($options['remove_fields'] as $leftCol => $field)
     {
       unset($emptyForm[$field]);
     }
