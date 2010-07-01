@@ -81,6 +81,9 @@
     <foreign-key foreignTable="cd_user" onDelete="cascade" phpName="SomePhpName" refPhpName="SomeRefPhpName">
       <reference local="user_id" foreign="id" />
     </foreign-key>
+    <vendor type="mysql">
+      <parameter name="Charset" value="utf8" />
+    </vendor>
   </table>
 
   <table name="kl_article">

@@ -59,6 +59,8 @@ propel:
     _propel_behaviors:
       paranoid: { column: deleted_at }
       act_as_nested_set:
+    _vendor:
+      Charset: utf8
 
   kl_article:
     title:          varchar(50)

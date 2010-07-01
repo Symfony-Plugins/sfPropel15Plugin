@@ -175,6 +175,9 @@ class sfPropelDatabaseSchema
                 case '_uniques':
                   $classes[$phpName]['uniques'] = $column_params;
                   break;
+                case '_vendor':
+                  $classes[$phpName]['vendor'] = $column_params;
+                  break;
                 default:
                   $classes[$phpName]['columns'][$column] = $column_params;
               }
@@ -267,6 +270,12 @@ class sfPropelDatabaseSchema
         {
           $tableParams['_nestedSet'] = $classParams['nestedSet'];
           unset($classParams['nestedSet']);
+        }
+
+        if (isset($classParams['vendor']))
+        {
+          $tableParams['_vendor'] = $classParams['vendor'];
+          unset($classParams['vendor']);
         }
 
         // Table attributes
@@ -532,6 +541,18 @@ class sfPropelDatabaseSchema
           $xml .= "    </foreign-key>\n";
         }
       }
+
+      // vendor
+      if (isset($table['_vendor']))
+      {
+        $xml .= "    <vendor type=\"mysql\">\n";
+        foreach ($table['_vendor'] as $vendor_name => $vendor_value)
+        {
+          $xml .= "    <parameter name=\"$vendor_name\" value=\"$vendor_value\" />\n";
+        }
+        $xml .= "    </vendor>\n";
+      }
+
 
       $xml .= "  </table>\n";
     }
