@@ -293,6 +293,7 @@ class sfPropelFormGenerator extends sfGenerator
     switch ($column->getType())
     {
       case PropelColumnTypes::BOOLEAN:
+      case PropelColumnTypes::BOOLEAN_EMU:
         $name = 'Boolean';
         break;
       case PropelColumnTypes::CLOB:

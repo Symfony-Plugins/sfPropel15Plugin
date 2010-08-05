@@ -206,6 +206,7 @@ class sfPropelGenerator extends sfModelGenerator
     switch ($column->getType())
     {
       case PropelColumnTypes::BOOLEAN:
+      case PropelColumnTypes::BOOLEAN_EMU:
         return 'Boolean';
       case PropelColumnTypes::DATE:
       case PropelColumnTypes::TIMESTAMP:
