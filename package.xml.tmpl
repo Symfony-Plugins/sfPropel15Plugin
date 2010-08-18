@@ -45,6 +45,30 @@
   <changelog>
     <release>
       <version>
+        <release>1.1.0</release>
+        <api>1.5.3</api>
+      </version>
+      <stability>
+       <release>stable</release>
+       <api>stable</api>
+      </stability>
+      <license uri="http://www.symfony-project.org/license">MIT license</license>
+      <date>2010-08-18</date>
+      <license>MIT</license>
+      <notes>
+      	* Upgraded bundled Propel lib to 1.5.3
+      	* Fixed issue with filters for boolean columns in Oracle (closes #8897) 
+      	* Using remove_fields options in optional form when embedding/merging a form
+      	* Made it possible to define mysql-specific table attributes for SQL generation (closes #8816)
+      	* Added max_additions options to mergeRelation() and embedRelation()
+      	* Fixed option remove_fields was ignored in sfFormPropel::mergeRelation()
+      	* Fixed mergeRelation() with latest changes in sfForm
+      	* Added support for vendor data in schema.yml columns (patch from Dan Tudor)
+        * Added a way to customize the new form in an embedded relation form 
+      </notes>
+    </release>
+    <release>
+      <version>
         <release>1.0.0</release>
         <api>1.5.1</api>
       </version>
