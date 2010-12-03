@@ -59,7 +59,7 @@ function add{$strippedName}Widget()
     }
   $decorator .= "
 }
-+/* ]]> */
+/* ]]> */
 </script>
 <div id=\"add_{$strippedName}\" style=\"display:none\">
 </div>
